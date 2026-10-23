@@ -5,9 +5,9 @@
 ```text
 index.html                  Halaman utama dan UI
 assets/
-  css/style.css             Gaya aplikasi
+  css/style.css             Gaya aplikasi aktif
   images/
-    header/                 Gambar header
+    header/header.png       Gambar header
     icons/                  Ikon PWA dan favicon
     logo/                   Logo dan lisensi
 config/app-config.json      Identitas aplikasi dan unit
@@ -16,6 +16,8 @@ data/
   google-apps-script/       Backend Google Apps Script
   webhook.json              URL backend
 tools/serve-local.ps1       Server pengembangan lokal
+style.css                   Entry point gaya lama (kompatibilitas)
+css/base.css                Gaya untuk entry point gaya lama
 sw.js                       Service worker PWA
 manifest.webmanifest        Manifest PWA
 ```

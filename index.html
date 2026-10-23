@@ -86,7 +86,7 @@
                 <input type="text" id="watermarkText" class="watermark-input" placeholder="Judul narasi kegiatan" oninput="updatePreview()">
                 <div class="media-date-row">
                     <div class="image-input-group">
-                        <label class="file-picker-label" for="gambar">Input gambar</label>
+                        <label class="file-picker-label" for="gambar">Input<br>gambar</label>
                         <input type="file" id="gambar" accept="image/*" onchange="validateAndPreviewImage()">
                         <div id="fileValidation" class="validation-message"></div>
                     </div>
@@ -121,11 +121,11 @@
                 </button>
             </div>
             <div class="counter-container" aria-live="polite">
-                <div class="counter-label">File terkirim</div>
+                <div class="counter-label">Laporan bulan dipilih</div>
                 <div class="counter-value" id="successfulUploadCount">0</div>
             </div>
             <section class="sent-files-section" aria-labelledby="sentFilesTitle">
-                <h3 id="sentFilesTitle">Log file terkirim</h3>
+                <h3 id="sentFilesTitle">Laporan Terkirim :</h3>
                 <div id="logTerkirim" aria-live="polite"></div>
             </section>
         </div>
@@ -152,7 +152,7 @@
         }
 
         async function sendToBackend(action, data = {}) {
-            const allowedActions = ["uploadDrive", "getCounter"];
+            const allowedActions = ["uploadDrive", "getCounter", "listFiles"];
             if (!allowedActions.includes(action)) {
                 throw new Error(`Action "${action}" tidak tersedia`);
             }
@@ -184,6 +184,28 @@
                 throw new Error(result.error || "Gagal mengambil counter Google Drive");
             }
             return result.counter;
+        }
+
+        async function getDriveReports(accountId, monthFilter) {
+            if (typeof accountId !== "string" || !accountId.trim()) {
+                throw new Error("ID akun Desa/Kelurahan tidak tersedia");
+            }
+            const result = await sendToBackend("listFiles", {
+                desaFilter: accountId.trim(),
+                monthFilter
+            });
+            if (result.success !== true || !Array.isArray(result.files)) {
+                throw new Error(result.error || "Gagal mengambil daftar laporan Google Drive");
+            }
+            return result.files.filter(file =>
+                file && typeof file.name === "string" && /\.zip$/i.test(file.name) &&
+                (file.month || getReportMonthFromFilename(file.name)) === monthFilter
+            );
+        }
+
+        function getReportMonthFromFilename(filename) {
+            const match = filename.match(/_(\d{2})-(\d{2})-(\d{4})\.zip$/i);
+            return match ? `${match[3]}-${match[2]}` : "";
         }
 
         function blobToBase64(blob) {
@@ -278,6 +300,8 @@
         let submittedDates = [];
         let successfulUploadsByDate = {};
         let successfulUploadTotal = 0;
+        const newlyCreatedReportsByAccount = {};
+        let lastSyncedDriveReportsDate = "";
         let successfulSequenceByDate = {};
         let successfulUploadRevision = 0;
         let currentFile = null;
@@ -362,7 +386,29 @@
                 userBadge.style.background = '#315A8A';
             }
         }
-        
+
+        async function syncDriveReports(accountId) {
+            try {
+                const month = getSelectedReportMonth();
+                const reports = await getDriveReports(accountId, month);
+                if (activeAccountId === accountId && getSelectedReportMonth() === month) {
+                    renderSendLogs(reports.map(file => ({
+                        filename: file.name,
+                        month: file.month,
+                        status: "success",
+                        time: file.createdTime && !Number.isNaN(Date.parse(file.createdTime))
+                            ? new Date(file.createdTime).toLocaleString("id-ID", {
+                                dateStyle: "medium",
+                                timeStyle: "short"
+                            })
+                            : ""
+                    })));
+                }
+            } catch (error) {
+                console.error("Gagal menyinkronkan daftar laporan Google Drive:", error);
+            }
+        }
+
         function setChatMode(mode) {
             chatMode = mode;
             
@@ -907,6 +953,8 @@
             selectedDesa = select.options[select.selectedIndex].text.replace(/^\d+\.\s*/, '');
             initializeAccountData(selectedDesa);
             syncDriveUploadCounter(selectedDesa);
+            lastSyncedDriveReportsDate = getSelectedReportDate();
+            syncDriveReports(selectedDesa);
             const babinsaIdentity = getBabinsaIdentity(selectedDesa);
             updateDesaHeaderImage(selectedDesa);
             const headerDesaLabel = document.getElementById('headerDesaLabel');
@@ -939,7 +987,7 @@
                 
                 if (kordinatList.length === 0) {
                     currentKoordinat = "";
-                    showNotification(`File koordinat untuk ${selectedDesa} kosong atau tidak memiliki koordinat yang valid. Hubungi admin untuk memperbarui data.`, "warning");
+                    showNotification("Hubungi admin", "warning", true);
                     return;
                 }
 
@@ -950,7 +998,7 @@
                 
             } catch (error) {
                 console.error("Error:", error);
-                showNotification("Gagal memuat koordinat", "error");
+                showNotification("Hubungi admin", "warning", true);
             } finally {
                 loading.style.display = 'none';
                 updatePreview();
@@ -1069,25 +1117,54 @@
             const dateLabel = document.querySelector(".tanggal-input-kustom .date-picker-label");
             const timeLabel = document.querySelector(".waktu-input-kustom .date-picker-label");
             if (dateLabel) {
-                dateLabel.textContent = dateInput.value
-                    ? new Date(`${dateInput.value}T00:00:00`).toLocaleDateString("id-ID", {
-                        weekday: "long",
-                        day: "2-digit",
+                if (dateInput.value) {
+                    const selectedDate = new Date(`${dateInput.value}T00:00:00`);
+                    const weekday = selectedDate.toLocaleDateString("id-ID", { weekday: "long" });
+                    const formattedDate = selectedDate.toLocaleDateString("id-ID", {
+                        day: "numeric",
                         month: "long",
                         year: "numeric"
-                    })
-                    : "Tanggal";
+                    });
+                    dateLabel.textContent = `${weekday.charAt(0).toLocaleUpperCase("id-ID")}${weekday.slice(1)},\n${formattedDate}`;
+                } else {
+                    dateLabel.textContent = "Tanggal";
+                }
             }
             if (timeLabel) timeLabel.textContent = timeInput.value || "Waktu";
             picker.value = dateInput.value && timeInput.value
                 ? `${dateInput.value}T${timeInput.value}`
                 : "";
             updateDatePreview();
+            syncSelectedMonthData();
+        }
+
+        function getSelectedReportMonth() {
+            const { year, month } = getIndonesiaDateParts();
+            const dateValue = document.getElementById("tanggalTanggal")?.value ||
+                document.getElementById("tanggalWaktu")?.value ||
+                `${year}-${month}`;
+            return dateValue.slice(0, 7);
+        }
+
+        function getSelectedReportDate() {
+            const { year, month, day } = getIndonesiaDateParts();
+            return document.getElementById("tanggalTanggal")?.value ||
+                document.getElementById("tanggalWaktu")?.value?.slice(0, 10) ||
+                `${year}-${month}-${day}`;
+        }
+
+        function syncSelectedMonthData(force = false) {
+            const date = getSelectedReportDate();
+            renderSuccessfulUploadCounter();
+            if (!selectedDesa || (!force && date === lastSyncedDriveReportsDate)) return;
+            lastSyncedDriveReportsDate = date;
+            syncDriveReports(selectedDesa);
         }
 
         function openDatePicker(id) {
             const picker = document.getElementById(id);
             if (!picker) return;
+            if (id === "tanggalTanggal") syncSelectedMonthData(true);
             if (typeof picker.showPicker === "function") {
                 picker.showPicker();
             } else {
@@ -1099,8 +1176,10 @@
             const thankYouModal = document.getElementById("thankYouModal");
             const thankYouMessage = document.getElementById("thankYouMessage");
             const identity = formatBabinsaIdentity(selectedDesa);
+            const month = getSelectedReportMonth();
+            const newReportCount = newlyCreatedReportsByAccount[activeAccountId]?.[month] || 0;
             thankYouMessage.textContent =
-                `Terima kasih kepada ${identity} atas pengiriman ${successfulUploadTotal} laporan.`;
+                `Terima kasih kepada ${identity} atas pengiriman ${newReportCount} laporan baru.`;
             thankYouModal.hidden = false;
         }
 
@@ -1408,12 +1487,15 @@
                     updateCounter();
                     recordSuccessfulUpload(driveCounter);
                     saveSubmittedDate(tanggalWaktu);
-                    addSendLog(`${files.baseName}.zip`, "success");
+                    addSendLog(`${files.baseName}.zip`);
                     submittedBabinsas.push({ desa: selectedDesa, date: tanggalWaktu });
+                    const reportMonth = getSelectedReportMonth();
+                    newlyCreatedReportsByAccount[selectedDesa] ??= {};
+                    newlyCreatedReportsByAccount[selectedDesa][reportMonth] =
+                        (newlyCreatedReportsByAccount[selectedDesa][reportMonth] || 0) + 1;
+                    await syncDriveReports(selectedDesa);
                 } else {
-                    const uploadStatus = uploadResult?.duplicate === true ? "duplicate" : "failed";
-                    addSendLog(`${files.baseName}.zip`, uploadStatus, uploadErrorMessage);
-                    if (uploadStatus === "duplicate") {
+                    if (uploadResult?.duplicate === true) {
                         showNotification(uploadErrorMessage, "duplicate");
                     } else {
                         console.warn("File laporan berhasil dibuat, tetapi upload ke Google Drive gagal:", uploadErrorMessage);
@@ -1421,7 +1503,6 @@
                 }
             } catch (error) {
                 console.error("Gagal membuat file laporan:", error);
-                addSendLog(`${getSubmissionBaseName()}.png dan ${getSubmissionBaseName()}.txt`, "failed", error.message);
             } finally {
                 submitButton.disabled = false;
                 submitButton.dataset.processing = "false";
@@ -1492,7 +1573,6 @@
                 await loadAppConfig();
             } catch (error) {
                 console.error("Error:", error);
-                showNotification("Gagal memuat identitas aplikasi", "error");
                 return;
             }
 
@@ -1507,8 +1587,9 @@
             const minutes = now.minute;
             
             const seconds = String(new Date().getSeconds()).padStart(2, '0');
-            document.getElementById('tanggalWaktu').value = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
-            updateDatePreview();
+            document.getElementById('tanggalTanggal').value = `${year}-${month}-${day}`;
+            document.getElementById('tanggalJam').value = `${hours}:${minutes}:${seconds}`;
+            syncDateTimeInputs();
             setInterval(updateLiveSeconds, 1000);
 
         }
@@ -1650,9 +1731,9 @@
             document.getElementById("submitBtn").disabled = !isComplete;
         }
         
-        function showNotification(message, type) {
+        function showNotification(message, type, plain = false) {
             const notification = document.createElement('div');
-            notification.className = `notification ${type}`;
+            notification.className = `notification ${type}${plain ? ' notification-plain' : ''}`;
             notification.textContent = message;
             notification.setAttribute('role', 'button');
             notification.setAttribute('tabindex', '0');
@@ -1802,10 +1883,8 @@
                 return;
             }
 
-            const now = new Date();
-            const { year, month, day } = getIndonesiaDateParts(now);
-            const dateKey = `${year}-${month}-${day}`;
-            successfulUploadsByDate[dateKey] = (successfulUploadsByDate[dateKey] || 0) + 1;
+            successfulUploadsByDate[submissionDateKey] =
+                (successfulUploadsByDate[submissionDateKey] || 0) + 1;
             successfulUploadTotal++;
             localStorage.setItem(getAccountStorageKey('successfulUploadsByDate'), JSON.stringify(successfulUploadsByDate));
             localStorage.setItem(
@@ -1818,19 +1897,23 @@
         function renderSuccessfulUploadCounter() {
             const countElement = document.getElementById("successfulUploadCount");
             if (!countElement) return;
-            countElement.textContent = String(successfulUploadTotal);
+            const selectedMonth = getSelectedReportMonth();
+            const monthlyTotal = Object.entries(successfulUploadsByDate)
+                .filter(([date, count]) => date.startsWith(`${selectedMonth}-`) && Number.isInteger(count))
+                .reduce((total, [, count]) => total + count, 0);
+            countElement.textContent = String(monthlyTotal);
         }
 
-        function addSendLog(filename, status, message = "") {
+        function addSendLog(filename) {
             const time = new Date().toLocaleTimeString('id-ID');
-            saveSendLog(filename, status, time, message);
+            saveSendLog(filename, time);
             renderSendLogs();
         }
 
-        function saveSendLog(filename, status, time, message = "") {
+        function saveSendLog(filename, time) {
             const storageKey = getAccountStorageKey('sendLogs');
             let logs = JSON.parse(localStorage.getItem(storageKey) || '[]');
-            logs.unshift({ filename, status, time, message });
+            logs.unshift({ filename, status: "success", time });
             if (logs.length > 50) logs = logs.slice(0, 50);
             localStorage.setItem(storageKey, JSON.stringify(logs));
         }
@@ -1839,12 +1922,15 @@
             renderSendLogs();
         }
 
-        function renderSendLogs() {
+        function renderSendLogs(driveReports = null) {
             const container = document.getElementById("logTerkirim");
             if (!container) return;
-            const logs = JSON.parse(localStorage.getItem(getAccountStorageKey('sendLogs')) || '[]')
-                .filter(log => typeof log.filename === "string" &&
-                    /\.zip$/i.test(log.filename))
+            const selectedMonth = getSelectedReportMonth();
+            const logs = (driveReports || JSON.parse(localStorage.getItem(getAccountStorageKey('sendLogs')) || '[]'))
+                .filter(log => log.status === "success" &&
+                    typeof log.filename === "string" &&
+                    /\.zip$/i.test(log.filename) &&
+                    (log.month || getReportMonthFromFilename(log.filename)) === selectedMonth)
                 .sort((logA, logB) => {
                     const matchA = logA.filename.match(/^(\d+)_.*_(\d{2})-(\d{2})-(\d{4})\.zip$/i);
                     const matchB = logB.filename.match(/^(\d+)_.*_(\d{2})-(\d{2})-(\d{4})\.zip$/i);
@@ -1856,10 +1942,6 @@
             container.replaceChildren();
 
             if (logs.length === 0) {
-                const emptyMessage = document.createElement("div");
-                emptyMessage.className = "log-empty";
-                emptyMessage.textContent = "Belum ada file ZIP terkirim";
-                container.appendChild(emptyMessage);
                 return;
             }
 
@@ -1873,17 +1955,9 @@
                 logFilename.className = "log-filename";
                 logFilename.textContent = log.filename;
                 const logStatus = document.createElement("div");
-                const isSuccessful = log.status === "success";
-                const isDuplicate = log.status === "duplicate";
-                logStatus.className = `log-status ${isSuccessful ? "success" : isDuplicate ? "duplicate" : "failed"}`;
-                logStatus.textContent = isSuccessful ? "TERKIRIM" : isDuplicate ? "DUPLIKAT" : "GAGAL";
+                logStatus.className = "log-status success";
+                logStatus.textContent = "TERKIRIM";
                 logEntry.append(logDate, logFilename, logStatus);
-                if (!isSuccessful && log.message) {
-                    const logError = document.createElement("div");
-                    logError.className = "log-error";
-                    logError.textContent = log.message;
-                    logEntry.appendChild(logError);
-                }
                 container.appendChild(logEntry);
             });
         }

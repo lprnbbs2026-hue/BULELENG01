@@ -19,7 +19,7 @@
 <body>
     <div id="desaStartModal">
         <div class="desa-start-card">
-            <h1 class="app-modal-title">DUKOPS BABINSA</h1>
+            <h1 class="app-modal-title">DUKOPS BABINSA 01</h1>
             <img
                 class="modal-logo"
                 src="assets/images/logo/logo-1.png"
@@ -30,7 +30,7 @@
                 <option value="">Pilih Desa/Kelurahan</option>
             </select>
             <div class="start-mode-description" aria-live="polite">
-                <span id="runningTextContent" class="marquee-text">Memuat RUNNING.TXT...</span>
+                <span id="runningTextContent" class="marquee-text"></span>
             </div>
         </div>
     </div>
@@ -38,7 +38,7 @@
     <div id="thankYouModal" class="thank-you-modal" role="dialog" aria-modal="true" aria-labelledby="thankYouTitle" hidden>
         <div class="thank-you-card">
             <img class="modal-logo" src="assets/images/logo/logo-1.png" alt="Lambang TNI Angkatan Darat">
-            <h2 id="thankYouTitle">Terima Kasih</h2>
+            <h2 id="thankYouTitle">Suksma</h2>
             <p id="thankYouMessage"></p>
             <button type="button" class="thank-you-button" onclick="closeThankYouModal()">OK</button>
         </div>
@@ -46,7 +46,7 @@
 
     <div id="offlineModal" class="offline-modal" role="alert" aria-live="assertive" hidden>
         <div class="offline-card">
-            <p>Anda sedang offline, cek jaringan koneksi internet</p>
+            <p>Anda sedang offline, cek jaringan koneksi internet anda</p>
         </div>
     </div>
 
@@ -68,12 +68,11 @@
         
         <div class="input-section dashboard-desa-status">
             <div class="mode-description hidden-text">
-                Laporan otomatis disimpan ke Google Drive.
             </div>
             
             <div class="previewBox hidden-text" id="previewDesa"></div>
 
-            <div id="loadingKoordinat"><span class="loading-spinner" aria-hidden="true"></span> Memuat koordinat...</div>
+            <div id="loadingKoordinat"><span class="loading-spinner" aria-hidden="true"></span>Kordinat</div>
             <button class="refresh-btn" onclick="pickRandomKoordinat()">Acak Ulang Koordinat</button>
         </div>
         
@@ -82,7 +81,7 @@
                 Instal Aplikasi
             </button>
             <div class="file-input-container">
-                <input type="text" id="watermarkText" class="watermark-input" placeholder="Judul narasi kegiatan" oninput="updatePreview()">
+                <input type="text" id="watermarkText" class="watermark-input" placeholder="Judul narasi kegiatan contoh : Komsos" oninput="updatePreview()">
                 <div class="media-date-row">
                     <div class="image-input-group">
                         <label class="file-picker-label" for="gambar">Input<br>gambar</label>
@@ -101,8 +100,8 @@
                         </button>
                         <input type="time" id="tanggalJam" step="1" lang="id" aria-label="Pilih waktu 24 jam" onchange="stopLiveSeconds(); syncDateTimeInputs()" oninput="stopLiveSeconds(); syncDateTimeInputs()">
                     </div>
-                    <input type="text" id="tanggalWaktuDisplay" value="Pilih tanggal dan waktu" readonly aria-label="Tanggal dan waktu kegiatan">
-                    <input type="datetime-local" id="tanggalWaktu" step="1" lang="id" onchange="updateDatePreview()" aria-label="Tanggal dan waktu gabungan">
+                    <input type="text" id="tanggalWaktuDisplay" value="Pilih tanggal & waktu" readonly aria-label="Tanggal & waktu kegiatan">
+                    <input type="datetime-local" id="tanggalWaktu" step="1" lang="id" onchange="updateDatePreview()" aria-label="Tanggal & waktu gabungan">
                 </div>
             </div>
             <div class="previewBox" id="previewTanggal"></div>
@@ -116,7 +115,7 @@
                     SIMPAN
                 </button>
                 <button id="exitBtn" class="exit-button" type="button" onclick="exitApplication()">
-                    KELUAR
+                    KELUAR APLIKASI
                 </button>
             </div>
             <div class="counter-container" aria-live="polite">

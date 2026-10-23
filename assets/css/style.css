@@ -1689,15 +1689,24 @@
             margin-bottom: 12px;
         }
 
+        .desa-entry-control {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            min-height: 48px;
+            margin: 0 0 12px;
+        }
+
+        #installPwaButton,
+        #selectDesa {
+            width: 100%;
+            min-height: 48px;
+            margin: 0;
+        }
+
         #installPwaButton {
             display: none;
-            position: fixed;
-            right: 16px;
-            bottom: 16px;
-            z-index: 900;
-            width: auto;
-            margin: 0;
-            padding: 10px 14px;
+            padding: 9px 14px;
             border: 1px solid #91A083;
             background: #46533F;
             color: #F2F3EC;
@@ -1706,6 +1715,10 @@
 
         #installPwaButton.visible {
             display: block;
+        }
+
+        #selectDesa[hidden] {
+            display: none;
         }
 
         #installPwaButton:hover:not(:disabled) {

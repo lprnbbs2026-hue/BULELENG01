@@ -17,10 +17,6 @@
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
-    <button id="installPwaButton" type="button">
-        Instal Aplikasi
-    </button>
-
     <div id="desaStartModal">
         <div class="desa-start-card">
             <h1 class="app-modal-title">DUKOPS BABINSA</h1>
@@ -30,9 +26,14 @@
                 alt="Lambang TNI Angkatan Darat"
             >
             <div class="modal-logo-caption">TNI-AD</div>
-            <select id="selectDesa" aria-label="Pilih desa atau kelurahan" onchange="loadSelectedDesa()">
-                <option value="">Pilih Desa/Kelurahan</option>
-            </select>
+            <div class="desa-entry-control">
+                <button id="installPwaButton" type="button">
+                    Instal Aplikasi
+                </button>
+                <select id="selectDesa" aria-label="Pilih desa atau kelurahan" onchange="loadSelectedDesa()" hidden>
+                    <option value="">Pilih Desa/Kelurahan</option>
+                </select>
+            </div>
             <div class="start-mode-description" aria-live="polite">
                 <span id="runningTextContent" class="marquee-text">Memuat RUNNING.TXT...</span>
             </div>
@@ -1015,6 +1016,7 @@
                 pickRandomKoordinat();
                 checkInputCompletion();
                 document.getElementById('desaStartModal').classList.add('hidden');
+                updateInstallButton();
                 
             } catch (error) {
                 if (loadSequence !== coordinateLoadSequence) return;
@@ -2162,30 +2164,52 @@
         }
 
         let deferredInstallPrompt = null;
+        const PWA_INSTALLED_KEY = "dukopsPwaInstalled";
 
         function isPwaInstalled() {
-            return window.matchMedia('(display-mode: standalone)').matches ||
+            const runningStandalone = window.matchMedia('(display-mode: standalone)').matches ||
                 window.navigator.standalone === true ||
                 document.referrer.startsWith('android-app://');
+            if (runningStandalone) return true;
+            try {
+                return localStorage.getItem(PWA_INSTALLED_KEY) === "true";
+            } catch (error) {
+                console.warn("Status instalasi tidak dapat dibaca:", error);
+                return false;
+            }
         }
 
         function updateInstallButton() {
             const button = document.getElementById('installPwaButton');
-            if (!button) return;
-            button.classList.toggle(
-                'visible',
-                Boolean(deferredInstallPrompt) && !isPwaInstalled()
+            const villageSelect = document.getElementById('selectDesa');
+            if (!button || !villageSelect) return;
+            const selectionModal = document.getElementById('desaStartModal');
+            const selectionIsVisible = Boolean(
+                selectionModal && !selectionModal.classList.contains('hidden')
             );
+            const canChooseVillage = isPwaInstalled();
+            button.classList.toggle('visible', selectionIsVisible && !canChooseVillage);
+            villageSelect.hidden = !canChooseVillage;
         }
 
         window.addEventListener('beforeinstallprompt', event => {
             event.preventDefault();
             deferredInstallPrompt = event;
+            try {
+                localStorage.removeItem(PWA_INSTALLED_KEY);
+            } catch (error) {
+                console.warn("Status instalasi tidak dapat diperbarui:", error);
+            }
             updateInstallButton();
         });
 
         window.addEventListener('appinstalled', () => {
             deferredInstallPrompt = null;
+            try {
+                localStorage.setItem(PWA_INSTALLED_KEY, "true");
+            } catch (error) {
+                console.warn("Status instalasi tidak dapat disimpan:", error);
+            }
             updateInstallButton();
         });
 
@@ -2203,7 +2227,7 @@
                 return;
             }
             if (!deferredInstallPrompt) {
-                showNotification("Instalasi langsung belum tersedia di browser ini.", "warning");
+                showNotification("Buka menu browser, lalu pilih Instal aplikasi atau Tambahkan ke layar utama.", "warning");
                 return;
             }
 
@@ -2213,6 +2237,8 @@
                 await promptEvent.prompt();
                 const choice = await promptEvent.userChoice;
                 if (choice.outcome === "accepted") {
+                    updateInstallButton();
+                } else {
                     updateInstallButton();
                 }
             } catch (error) {

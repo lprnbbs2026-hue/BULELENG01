@@ -1,0 +1,33 @@
+/* Komponen tombol aksi */
+.attendance-button {
+    background: #0F766E;
+}
+
+.attendance-button:hover:not(:disabled) {
+    background: #115E59;
+}
+
+/* Komponen modal absensi */
+.attendance-card {
+    border-color: #2DD4BF;
+}
+
+.attendance-card p {
+    margin: 10px 0;
+    font-size: 17px;
+}
+
+.attendance-count {
+    display: block;
+    margin: 12px 0;
+    color: #5EEAD4;
+    font-size: 42px;
+    line-height: 1;
+    font-weight: 700;
+}
+
+.attendance-card > div strong:not(.attendance-count) {
+    display: block;
+    color: #BFDBFE;
+    font-size: 20px;
+}

@@ -97,7 +97,7 @@
                     </div>
                     <div class="waktu-input-kustom">
                         <button class="date-picker-trigger" type="button" aria-label="Pilih waktu" onclick="openDatePicker('tanggalJam')">
-                            <span class="date-picker-label">Waktu</span>
+                            <span class="date-picker-label">Pukul :</span>
                         </button>
                         <input type="time" id="tanggalJam" step="1" lang="id" aria-label="Pilih waktu 24 jam" onchange="syncDateTimeInputs()" oninput="syncDateTimeInputs()">
                     </div>
@@ -1189,7 +1189,9 @@
                     dateLabel.textContent = "Tanggal";
                 }
             }
-            if (timeLabel) timeLabel.textContent = timeInput.value || "Waktu";
+            if (timeLabel) timeLabel.textContent = timeInput.value
+                ? `Pukul : ${timeInput.value}`
+                : "Pukul :";
             picker.value = dateInput.value && timeInput.value
                 ? `${dateInput.value}T${timeInput.value}`
                 : "";
@@ -1790,7 +1792,7 @@
             document.getElementById('tanggalTanggal').value = "";
             document.getElementById('tanggalJam').value = "";
             document.querySelector(".tanggal-input-kustom .date-picker-label").textContent = "Tanggal";
-            document.querySelector(".waktu-input-kustom .date-picker-label").textContent = "Waktu";
+            document.querySelector(".waktu-input-kustom .date-picker-label").textContent = "Pukul :";
             document.getElementById('previewTanggal').textContent = "";
             
             document.getElementById('fileValidation').className = "validation-message";

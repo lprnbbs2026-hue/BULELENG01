@@ -1,4 +1,4 @@
-const CACHE_NAME = "sistem-pelaporan-v33";
+const CACHE_NAME = "sistem-pelaporan-v34";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -46,6 +46,7 @@ self.addEventListener("fetch", event => {
   if (event.request.method !== "GET") return;
 
   const requestUrl = new URL(event.request.url);
+  const isNavigation = event.request.mode === "navigate";
   const alwaysFresh = requestUrl.pathname.includes("/data/desa/") ||
     requestUrl.pathname.endsWith("/config/app-config.json") ||
     requestUrl.pathname.endsWith("/data/webhook.json") ||
@@ -55,13 +56,22 @@ self.addEventListener("fetch", event => {
     requestUrl.pathname.endsWith("/manifest.webmanifest") ||
     requestUrl.pathname.endsWith("/sw.js");
 
-  if (alwaysFresh) {
+  if (isNavigation || alwaysFresh) {
     event.respondWith(
-      fetch(event.request, { cache: "no-store" }).then(response => {
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
-        return response;
-      }).catch(() => caches.match(event.request))
+      (async () => {
+        try {
+          const response = await fetch(event.request, { cache: "no-store" });
+          if (response.ok) {
+            const cache = await caches.open(CACHE_NAME);
+            await cache.put(event.request, response.clone());
+          }
+          return response;
+        } catch (error) {
+          const cached = await caches.match(event.request);
+          if (cached) return cached;
+          throw error;
+        }
+      })()
     );
     return;
   }

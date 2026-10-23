@@ -14,21 +14,22 @@
     <link id="appManifest" rel="manifest" href="manifest.webmanifest">
     <meta name="theme-color" content="#0B1220">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
     <button id="installPwaButton" type="button">
-        <i class="fas fa-download"></i> Instal Aplikasi
+        Instal Aplikasi
     </button>
 
     <div id="desaStartModal">
         <div class="desa-start-card">
+            <h1 class="app-modal-title">DUKOPS BABINSA</h1>
             <img
                 class="modal-logo"
                 src="assets/images/logo/logo-1.png"
                 alt="Lambang TNI Angkatan Darat"
             >
+            <div class="modal-logo-caption">TNI-AD</div>
             <select id="selectDesa" aria-label="Pilih desa atau kelurahan" onchange="loadSelectedDesa()">
                 <option value="">Pilih Desa/Kelurahan</option>
             </select>
@@ -49,7 +50,6 @@
 
     <div id="offlineModal" class="offline-modal" role="alert" aria-live="assertive" hidden>
         <div class="offline-card">
-            <i class="fas fa-satellite-dish offline-icon" aria-hidden="true"></i>
             <p>Anda sedang offline, cek jaringan koneksi internet</p>
         </div>
     </div>
@@ -77,8 +77,8 @@
             
             <div class="previewBox hidden-text" id="previewDesa"></div>
 
-            <div id="loadingKoordinat"><i class="fas fa-spinner fa-spin"></i> Memuat koordinat...</div>
-            <button class="refresh-btn" onclick="pickRandomKoordinat()"><i class="fas fa-random"></i> Acak Ulang Koordinat</button>
+            <div id="loadingKoordinat"><span class="loading-spinner" aria-hidden="true"></span> Memuat koordinat...</div>
+            <button class="refresh-btn" onclick="pickRandomKoordinat()">Acak Ulang Koordinat</button>
         </div>
         
         <div class="input-section">
@@ -114,10 +114,10 @@
 
             <div class="action-buttons">
                 <button id="submitBtn" class="combined-button" onclick="processSubmission()" disabled>
-                    <i class="fas fa-cloud-upload-alt"></i> SIMPAN
+                    SIMPAN
                 </button>
                 <button id="exitBtn" class="exit-button" type="button" onclick="exitApplication()">
-                    <i class="fas fa-sign-out-alt"></i> KELUAR
+                    KELUAR
                 </button>
             </div>
             <div class="counter-container" aria-live="polite">
@@ -294,6 +294,9 @@
         let selectedDesa = "";
         let kordinatList = [];
         let currentKoordinat = "";
+        let coordinateLoadSequence = 0;
+        let coordinateLogoRevealTimer = null;
+        let coordinateLogoCleanupTimer = null;
         let tanggalWaktu = "";
         let lastSubmittedDate = null;
         let submissionCount = 0;
@@ -487,13 +490,13 @@
             
             if (widget.style.display === 'flex') {
                 widget.style.display = 'none';
-                toggleBtn.innerHTML = '<i class="fas fa-comment-alt"></i>';
+                renderChatToggleButton(toggleBtn, false);
                 if (unreadMessages > 0) {
                     toggleBtn.querySelector('.badge').style.display = 'flex';
                 }
             } else {
                 widget.style.display = 'flex';
-                toggleBtn.innerHTML = '<i class="fas fa-times"></i>';
+                renderChatToggleButton(toggleBtn, true);
                 
                 unreadMessages = 0;
                 updateUnreadCounter();
@@ -508,6 +511,17 @@
                 setTimeout(() => {
                     document.getElementById('chatInput').focus();
                 }, 150);
+            }
+        }
+
+        function renderChatToggleButton(toggleBtn, isOpen) {
+            toggleBtn.textContent = isOpen ? 'TUTUP' : 'CHAT';
+            if (!isOpen && unreadMessages > 0) {
+                const badge = document.createElement('span');
+                badge.className = 'badge';
+                badge.id = 'unreadCount';
+                badge.textContent = unreadMessages > 9 ? '9+' : String(unreadMessages);
+                toggleBtn.appendChild(badge);
             }
         }
         
@@ -823,13 +837,13 @@
             
             switch(status) {
                 case 'connected':
-                    statusElement.innerHTML = `<i class="fas fa-circle status-icon connected"></i> Terhubung ke Bot Asisten`;
+                    statusElement.innerHTML = `<span class="status-icon connected" aria-hidden="true"></span> Terhubung ke Bot Asisten`;
                     break;
                 case 'disconnected':
-                    statusElement.innerHTML = `<i class="fas fa-circle status-icon disconnected"></i> Offline`;
+                    statusElement.innerHTML = `<span class="status-icon disconnected" aria-hidden="true"></span> Offline`;
                     break;
                 case 'connecting':
-                    statusElement.innerHTML = `<i class="fas fa-circle status-icon connecting"></i> Menghubungkan...`;
+                    statusElement.innerHTML = `<span class="status-icon connecting" aria-hidden="true"></span> Menghubungkan...`;
                     break;
             }
         }
@@ -945,11 +959,15 @@
             const select = document.getElementById('selectDesa');
             const coordUrl = select.value;
             const loading = document.getElementById('loadingKoordinat');
+            const loadSequence = ++coordinateLoadSequence;
+            dismissNotifications("Hubungi admin");
             
             if (!coordUrl) {
                 resetForm();
                 return;
             }
+            kordinatList = [];
+            currentKoordinat = "";
             selectedDesa = select.options[select.selectedIndex].text.replace(/^\d+\.\s*/, '');
             initializeAccountData(selectedDesa);
             syncDriveUploadCounter(selectedDesa);
@@ -978,16 +996,18 @@
 
             try {
                 const response = await fetch(coordUrl, { cache: "no-store" });
+                if (loadSequence !== coordinateLoadSequence) return;
                 if (!response.ok) throw new Error("Gagal memuat koordinat");
 
                 const text = await response.text();
+                if (loadSequence !== coordinateLoadSequence) return;
                 kordinatList = text.split(/\r?\n/)
                     .map(line => line.trim())
                     .filter(line => line && !line.startsWith('#') && line.includes(','));
                 
                 if (kordinatList.length === 0) {
                     currentKoordinat = "";
-                    showNotification("Hubungi admin", "warning", true);
+                    showNotification("Hubungi admin", "warning", true, 2600);
                     return;
                 }
 
@@ -997,12 +1017,15 @@
                 document.getElementById('desaStartModal').classList.add('hidden');
                 
             } catch (error) {
+                if (loadSequence !== coordinateLoadSequence) return;
                 console.error("Error:", error);
-                showNotification("Hubungi admin", "warning", true);
+                showNotification("Hubungi admin", "warning", true, 2600);
             } finally {
-                loading.style.display = 'none';
-                updatePreview();
-                checkInputCompletion();
+                if (loadSequence === coordinateLoadSequence) {
+                    loading.style.display = 'none';
+                    updatePreview();
+                    checkInputCompletion();
+                }
             }
         }
         
@@ -1174,12 +1197,20 @@
 
         function exitApplication() {
             const thankYouModal = document.getElementById("thankYouModal");
+            const thankYouTitle = document.getElementById("thankYouTitle");
             const thankYouMessage = document.getElementById("thankYouMessage");
             const identity = formatBabinsaIdentity(selectedDesa);
             const month = getSelectedReportMonth();
             const newReportCount = newlyCreatedReportsByAccount[activeAccountId]?.[month] || 0;
-            thankYouMessage.textContent =
-                `Terima kasih kepada ${identity} atas pengiriman ${newReportCount} laporan baru.`;
+            if (newReportCount === 0) {
+                thankYouTitle.textContent = "Tetap Semangat!";
+                thankYouMessage.textContent =
+                    `Belum ada laporan baru dari ${identity} pada bulan yang dipilih. Tetap semangat melaporkan kegiatan!`;
+            } else {
+                thankYouTitle.textContent = "Terima Kasih";
+                thankYouMessage.textContent =
+                    `Terima kasih kepada ${identity} atas pengiriman ${newReportCount} laporan baru.`;
+            }
             thankYouModal.hidden = false;
         }
 
@@ -1450,7 +1481,7 @@
             submitButton.disabled = true;
             submitButton.classList.add("is-processing");
             const originalButtonText = submitButton.innerHTML;
-            submitButton.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${selectedDesa}`;
+            submitButton.textContent = `Memproses... ${selectedDesa}`;
             try {
                 const files = await createSubmissionFiles();
                 await downloadSubmissionFiles(files);
@@ -1731,17 +1762,37 @@
             document.getElementById("submitBtn").disabled = !isComplete;
         }
         
-        function showNotification(message, type, plain = false) {
+        function showNotification(message, type, plain = false, autoDismissMs = 0) {
             const notification = document.createElement('div');
-            notification.className = `notification ${type}${plain ? ' notification-plain' : ''}`;
+            notification.className = `notification ${type}${plain ? ' notification-plain coordinate-notification' : ''}`;
             notification.textContent = message;
+            notification.dataset.message = message;
             notification.setAttribute('role', 'button');
             notification.setAttribute('tabindex', '0');
             notification.setAttribute('aria-label', 'Tutup notifikasi');
 
+            if (plain) {
+                const logo = document.querySelector('#desaStartModal .modal-logo');
+                if (logo) {
+                    const logoBounds = logo.getBoundingClientRect();
+                    notification.style.left = `${logoBounds.left + logoBounds.width / 2}px`;
+                    notification.style.top = `${logoBounds.top + logoBounds.height / 2}px`;
+                    notification.coordinateLogo = logo;
+                    scheduleCoordinateLogoReveal(logo, autoDismissMs);
+                }
+            }
+
             document.body.appendChild(notification);
 
             const closeNotification = () => {
+                if (notification.dismissTimer) {
+                    clearTimeout(notification.dismissTimer);
+                    notification.dismissTimer = null;
+                }
+                if (notification.coordinateLogo &&
+                    notification.coordinateLogo.classList.contains('coordinate-logo-hidden')) {
+                    revealCoordinateLogo(notification.coordinateLogo);
+                }
                 notification.style.opacity = '0';
                 setTimeout(() => notification.remove(), 500);
             };
@@ -1752,6 +1803,48 @@
                     closeNotification();
                 }
             }, { once: true });
+            if (autoDismissMs > 0) {
+                notification.dismissTimer = setTimeout(closeNotification, autoDismissMs);
+            }
+        }
+
+        function scheduleCoordinateLogoReveal(logo, delayMs) {
+            clearTimeout(coordinateLogoRevealTimer);
+            clearTimeout(coordinateLogoCleanupTimer);
+            logo.classList.remove('coordinate-logo-revealing');
+            logo.classList.add('coordinate-logo-hidden');
+            coordinateLogoRevealTimer = setTimeout(() => {
+                revealCoordinateLogo(logo);
+            }, delayMs);
+        }
+
+        function revealCoordinateLogo(logo) {
+            clearTimeout(coordinateLogoRevealTimer);
+            clearTimeout(coordinateLogoCleanupTimer);
+            if (!logo || !logo.isConnected) return;
+            logo.classList.remove('coordinate-logo-hidden');
+            logo.classList.add('coordinate-logo-revealing');
+            coordinateLogoCleanupTimer = setTimeout(() => {
+                logo.classList.remove('coordinate-logo-revealing');
+            }, 1200);
+        }
+
+        function resetCoordinateLogoEffect() {
+            clearTimeout(coordinateLogoRevealTimer);
+            clearTimeout(coordinateLogoCleanupTimer);
+            const logo = document.querySelector('#desaStartModal .modal-logo');
+            if (logo) {
+                logo.classList.remove('coordinate-logo-hidden', 'coordinate-logo-revealing');
+            }
+        }
+
+        function dismissNotifications(message) {
+            document.querySelectorAll('.notification').forEach(notification => {
+                if (notification.dataset.message !== message) return;
+                if (notification.dismissTimer) clearTimeout(notification.dismissTimer);
+                notification.remove();
+            });
+            resetCoordinateLogoEffect();
         }
         
         function getFormStatus() {

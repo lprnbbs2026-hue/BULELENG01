@@ -1501,11 +1501,6 @@
             100% { transform: rotate(360deg); }
         }
         
-        .fa-spin {
-            -webkit-animation: spin 1s infinite linear;
-            animation: spin 1s infinite linear;
-        }
-
         .dashboard-desa-status {
             display: none;
         }

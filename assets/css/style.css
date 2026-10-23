@@ -125,12 +125,6 @@
             box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
         }
 
-        .offline-icon {
-            margin-bottom: 14px;
-            color: #D6C68F;
-            font-size: 42px;
-        }
-
         .offline-card p {
             color: #E8EBDD;
             font-size: 16px;
@@ -232,6 +226,20 @@
             filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.24));
         }
 
+        #desaStartModal .modal-logo.coordinate-logo-hidden {
+            animation: none;
+            opacity: 0;
+            filter: blur(8px) drop-shadow(0 10px 18px rgba(0, 0, 0, 0.24));
+        }
+
+        #desaStartModal .modal-logo.coordinate-logo-revealing {
+            animation: none;
+            opacity: 1;
+            filter: blur(0) drop-shadow(0 10px 18px rgba(0, 0, 0, 0.24));
+            -webkit-transition: opacity 1.2s ease, -webkit-filter 1.2s ease;
+            transition: opacity 1.2s ease, filter 1.2s ease;
+        }
+
         #printable-area {
             width: 100% !important;
             margin: 0 !important;
@@ -245,7 +253,12 @@
         }
 
         .status-icon {
-            font-size: 8px;
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            margin-right: 5px;
+            border-radius: 50%;
+            vertical-align: middle;
         }
 
         .status-icon.connected {
@@ -782,6 +795,7 @@
         .notification.notification-plain {
             background: transparent;
             color: #fff;
+            font-size: 28px;
             font-weight: 600;
             -moz-border-radius: 0;
             -webkit-border-radius: 0;
@@ -789,6 +803,39 @@
             -webkit-box-shadow: none;
             -moz-box-shadow: none;
             box-shadow: none;
+            animation: coordinate-notification-spin 2.6s ease-in-out forwards;
+        }
+
+        .notification.coordinate-notification {
+            right: auto;
+            bottom: auto;
+            left: 50%;
+            top: 50%;
+            width: max-content;
+            max-width: calc(100vw - 24px);
+            padding: 0;
+            z-index: 1100;
+            pointer-events: none;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.95);
+        }
+
+        @keyframes coordinate-notification-spin {
+            0% {
+                opacity: 1;
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+            52% {
+                opacity: 1;
+                transform: translate(-50%, -50%) rotate(1080deg);
+            }
+            70% {
+                opacity: 1;
+                transform: translate(-50%, -50%) rotate(1080deg);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) rotate(1080deg);
+            }
         }
         
         .file-input-container {
@@ -937,6 +984,19 @@
             color: #D5E6FA;
             font-size: 14px;
             margin-top: 5px;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            margin-right: 6px;
+            border: 2px solid #D5E6FA;
+            border-top-color: transparent;
+            border-radius: 50%;
+            vertical-align: -2px;
+            -webkit-animation: spin 1s linear infinite;
+            animation: spin 1s linear infinite;
         }
         
         .combined-button {
@@ -1549,11 +1609,6 @@
             100% { transform: rotate(360deg); }
         }
         
-        .fa-spin {
-            -webkit-animation: spin 1s infinite linear;
-            animation: spin 1s infinite linear;
-        }
-
         .dashboard-desa-status {
             display: none;
         }
@@ -1590,6 +1645,37 @@
             border-radius: 21px;
             background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0));
             pointer-events: none;
+        }
+
+        .desa-start-card .app-modal-title {
+            position: relative;
+            margin: 0 0 8px;
+            color: #F5D889;
+            font-family: "Segoe UI", "Trebuchet MS", Arial, sans-serif;
+            font-size: 30px;
+            font-size: clamp(24px, 7vw, 34px);
+            font-weight: 900;
+            line-height: 1.15;
+            text-align: center;
+            text-shadow:
+                0 1px 0 #D0A94F,
+                0 2px 0 #A98032,
+                0 3px 0 #806020,
+                0 4px 0 #594315,
+                0 5px 8px rgba(0, 0, 0, 0.75);
+        }
+
+        .desa-start-card .modal-logo-caption {
+            position: relative;
+            margin: -14px 0 12px;
+            color: #F5D889;
+            font-family: "Segoe UI", "Trebuchet MS", Arial, sans-serif;
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: 3px;
+            line-height: 1.2;
+            text-align: center;
+            text-shadow: 0 1px 0 #A98032, 0 2px 4px rgba(0, 0, 0, 0.8);
         }
 
         .desa-start-card h2 {
@@ -1676,6 +1762,11 @@
 
         .desa-start-card h2 {
             font-size: 44px;
+        }
+
+        .desa-start-card .app-modal-title {
+            font-size: 30px;
+            font-size: clamp(22px, 7vw, 32px);
         }
 
         .desa-start-card p {

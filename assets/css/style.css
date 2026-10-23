@@ -617,7 +617,6 @@
 
         .media-date-row .waktu-input-kustom .date-picker-label {
             color: #514638;
-            transform: translateY(-6px);
         }
 
         .media-date-row .waktu-input-kustom:active .date-picker-label {

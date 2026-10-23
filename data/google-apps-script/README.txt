@@ -24,6 +24,8 @@ Setiap upload mengirim nama Desa/Kelurahan terpilih sebagai `accountId`.
 Counter total dan jumlah per tanggal dihitung langsung dari nama file ZIP di
 folder Drive, tanpa membuat file counter terpisah. File `_counters.json` lama
 boleh dibiarkan; script yang baru tidak membaca atau memperbaruinya.
+Nomor di awal nama ZIP berlanjut dari nomor tertinggi yang sudah tersimpan
+untuk Desa/Kelurahan tersebut, lintas tanggal dan bulan.
 
 Apps Script melayani action `uploadDrive`, `getCounter`, dan `listFiles`.
 `listFiles` mengembalikan nama ZIP dari desa/kelurahan dan bulan yang dipilih

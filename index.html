@@ -304,7 +304,7 @@
         let successfulUploadTotal = 0;
         const newlyCreatedReportsByAccount = {};
         let lastSyncedDriveReportsDate = "";
-        let successfulSequenceByDate = {};
+        let successfulSequence = 0;
         let successfulUploadRevision = 0;
         let currentFile = null;
         let fileIsValid = false;
@@ -1392,7 +1392,7 @@
                 ? `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`
                 : "Tanpa_Tanggal";
 
-            const sequence = String((successfulSequenceByDate[datePart] || 0) + 1).padStart(3, "0");
+            const sequence = String(successfulSequence + 1).padStart(3, "0");
             return `${sequence}_${desa}_${formattedDate}`;
         }
 
@@ -1483,6 +1483,11 @@
             const originalButtonText = submitButton.innerHTML;
             submitButton.textContent = `Memproses... ${selectedDesa}`;
             try {
+                const counter = await window.getDriveUploadCounter(selectedDesa);
+                if (activeAccountId !== selectedDesa) {
+                    throw new Error("Desa/Kelurahan berubah saat menyiapkan laporan");
+                }
+                applyDriveUploadCounter(counter);
                 const files = await createSubmissionFiles();
                 await downloadSubmissionFiles(files);
                 let driveUploaded = false;
@@ -1516,7 +1521,7 @@
                 }
                 if (driveUploaded) {
                     updateCounter();
-                    recordSuccessfulUpload(driveCounter);
+                    recordSuccessfulUpload(driveCounter, files.baseName);
                     saveSubmittedDate(tanggalWaktu);
                     addSendLog(`${files.baseName}.zip`);
                     submittedBabinsas.push({ desa: selectedDesa, date: tanggalWaktu });
@@ -1534,6 +1539,7 @@
                 }
             } catch (error) {
                 console.error("Gagal membuat file laporan:", error);
+                showNotification(error.message || "Gagal menyiapkan laporan.", "error");
             } finally {
                 submitButton.disabled = false;
                 submitButton.dataset.processing = "false";
@@ -1892,23 +1898,26 @@
             if (savedUploads === null) {
                 localStorage.setItem(uploadsKey, JSON.stringify(successfulUploadsByDate));
             }
-            const sequenceKey = getAccountStorageKey('successfulSequenceByDate');
-            const savedSequences = localStorage.getItem(sequenceKey);
-            successfulSequenceByDate = savedSequences ? JSON.parse(savedSequences) : {};
-            if (savedSequences === null) {
-                const savedLogs = JSON.parse(localStorage.getItem(getAccountStorageKey('sendLogs')) || '[]');
-                savedLogs.forEach(log => {
-                    if (log.status !== "success" || typeof log.filename !== "string") return;
-                    const match = log.filename.match(/^(\d+)_.*_(\d{2})-(\d{2})-(\d{4})\.zip$/i);
-                    if (!match) return;
-                    const dateKey = `${match[4]}-${match[3]}-${match[2]}`;
-                    successfulSequenceByDate[dateKey] = Math.max(
-                        successfulSequenceByDate[dateKey] || 0,
-                        Number(match[1])
-                    );
-                });
-                localStorage.setItem(sequenceKey, JSON.stringify(successfulSequenceByDate));
-            }
+
+            const sequenceKey = getAccountStorageKey('successfulSequence');
+            const savedSequenceValue = localStorage.getItem(sequenceKey);
+            const savedSequence = savedSequenceValue === null ? NaN : Number(savedSequenceValue);
+            const previousSequences = JSON.parse(
+                localStorage.getItem(getAccountStorageKey('successfulSequenceByDate')) || '{}'
+            );
+            const previousMaximum = Object.values(previousSequences)
+                .filter(Number.isSafeInteger)
+                .reduce((maximum, sequence) => Math.max(maximum, sequence), 0);
+            const savedLogs = JSON.parse(localStorage.getItem(getAccountStorageKey('sendLogs')) || '[]');
+            const loggedMaximum = savedLogs.reduce((maximum, log) => {
+                if (log.status !== "success" || typeof log.filename !== "string") return maximum;
+                const match = log.filename.match(/^(\d+)_.*_(\d{2})-(\d{2})-(\d{4})\.zip$/i);
+                return match ? Math.max(maximum, Number(match[1])) : maximum;
+            }, 0);
+            successfulSequence = Number.isSafeInteger(savedSequence) && savedSequence >= 0
+                ? savedSequence
+                : Math.max(previousMaximum, loggedMaximum, successfulUploadTotal);
+            localStorage.setItem(sequenceKey, String(successfulSequence));
             loadLastSubmittedDates();
             const logsContainer = document.getElementById("logTerkirim");
             if (logsContainer) logsContainer.innerHTML = '';
@@ -1930,6 +1939,10 @@
                         count >= 0)
             );
             successfulUploadTotal = counter.total;
+            const counterSequence = Number.isSafeInteger(counter.maxSequence) && counter.maxSequence >= 0
+                ? counter.maxSequence
+                : counter.total;
+            successfulSequence = Math.max(successfulSequence, counterSequence);
             localStorage.setItem(
                 getAccountStorageKey('successfulUploadsByDate'),
                 JSON.stringify(successfulUploadsByDate)
@@ -1937,6 +1950,10 @@
             localStorage.setItem(
                 getAccountStorageKey('successfulUploadTotal'),
                 String(successfulUploadTotal)
+            );
+            localStorage.setItem(
+                getAccountStorageKey('successfulSequence'),
+                String(successfulSequence)
             );
             renderSuccessfulUploadCounter();
         }
@@ -1963,14 +1980,15 @@
             localStorage.setItem(getAccountStorageKey('submissionCount'), submissionCount.toString());
         }
 
-        function recordSuccessfulUpload(counter = null) {
+        function recordSuccessfulUpload(counter = null, baseName = "") {
             successfulUploadRevision++;
-            const submissionDateKey = getSubmissionDateKey(tanggalWaktu);
-            successfulSequenceByDate[submissionDateKey] =
-                (successfulSequenceByDate[submissionDateKey] || 0) + 1;
+            const sequenceMatch = baseName.match(/^(\d+)_/);
+            if (sequenceMatch) {
+                successfulSequence = Math.max(successfulSequence, Number(sequenceMatch[1]));
+            }
             localStorage.setItem(
-                getAccountStorageKey('successfulSequenceByDate'),
-                JSON.stringify(successfulSequenceByDate)
+                getAccountStorageKey('successfulSequence'),
+                String(successfulSequence)
             );
             if (counter) {
                 applyDriveUploadCounter(counter);
@@ -2128,10 +2146,10 @@
 
             successfulUploadsByDate = {};
             successfulUploadTotal = 0;
-            successfulSequenceByDate = {};
+            successfulSequence = 0;
             localStorage.removeItem(getAccountStorageKey('successfulUploadsByDate'));
             localStorage.removeItem(getAccountStorageKey('successfulUploadTotal'));
-            localStorage.removeItem(getAccountStorageKey('successfulSequenceByDate'));
+            localStorage.removeItem(getAccountStorageKey('successfulSequence'));
             renderSuccessfulUploadCounter();
             
             resetForm();

@@ -254,6 +254,7 @@ function readCounter(accountId) {
   const yearFolders = root.getFolders();
   const dailyCounts = {};
   let total = 0;
+  let maxSequence = 0;
 
   while (yearFolders.hasNext()) {
     const yearFolder = yearFolders.next();
@@ -276,6 +277,10 @@ function readCounter(accountId) {
             const match = fileName.match(/_(\d{2})-(\d{2})-(\d{4})\.zip$/i);
             if (!match) continue;
 
+            const sequenceMatch = fileName.match(/^(\d+)_/);
+            if (sequenceMatch) {
+              maxSequence = Math.max(maxSequence, Number(sequenceMatch[1]));
+            }
             const dateKey = `${match[3]}-${match[2]}-${match[1]}`;
             dailyCounts[dateKey] = (dailyCounts[dateKey] || 0) + 1;
             total++;
@@ -287,7 +292,8 @@ function readCounter(accountId) {
 
   return {
     total: total,
-    dailyCounts: dailyCounts
+    dailyCounts: dailyCounts,
+    maxSequence: maxSequence
   };
 }
 

@@ -351,18 +351,22 @@
             align-items: center;
             justify-content: center;
             width: 100%;
-            height: 52px;
+            min-height: 52px;
             margin-top: 5px;
-            padding: 10px 18px;
+            padding: 8px 12px;
             border: 1px solid #BFD5F1;
-            -moz-border-radius: 0;
-            -webkit-border-radius: 0;
-            border-radius: 0;
+            -moz-border-radius: 999px;
+            -webkit-border-radius: 999px;
+            border-radius: 999px;
             background: linear-gradient(180deg, #FFFFFF 0%, #EEF6FF 100%);
             color: #172033;
             font-size: clamp(18px, 3vw, 28px);
             font-weight: 600;
+            line-height: 1.2;
+            text-align: center;
+            overflow-wrap: anywhere;
             cursor: pointer;
+            transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
         }
 
         .file-picker-label:hover {
@@ -465,28 +469,34 @@
 
         .tanggal-input-kustom {
             position: relative;
+            display: flex;
+            align-items: stretch;
             width: 100%;
-            height: 57px;
+            min-height: 57px;
             margin-top: 0;
             cursor: pointer;
             border: 1px solid #BFD5F1;
-            border-radius: 0;
+            border-radius: 999px;
             background: linear-gradient(180deg, #FFFFFF 0%, #EEF6FF 100%);
-            transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+            overflow: hidden;
+            transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
         }
 
         .waktu-input-kustom {
             position: relative;
+            display: flex;
+            align-items: stretch;
             flex: 1 1 0;
             min-width: 0;
-            height: 57px;
+            min-height: 57px;
             cursor: pointer;
             border: 1px solid #BFD5F1;
             -moz-border-radius: 0;
             -webkit-border-radius: 0;
-            border-radius: 0;
+            border-radius: 999px;
             background: linear-gradient(180deg, #FFFFFF 0%, #EEF6FF 100%);
-            transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+            overflow: hidden;
+            transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
         }
 
         #tanggalWaktuDisplay {
@@ -498,33 +508,40 @@
             align-items: center;
             justify-content: center;
             width: 100%;
-            height: 55px;
+            min-height: 55px;
             margin-top: 0;
             padding: 10px 8px;
             border: 0;
-            -moz-border-radius: 0;
-            -webkit-border-radius: 0;
-            border-radius: 0;
+            -moz-border-radius: inherit;
+            -webkit-border-radius: inherit;
+            border-radius: inherit;
             background: transparent;
             color: #172033;
             font-size: clamp(18px, 3vw, 28px);
             font-weight: 600;
+            line-height: 1.2;
+            text-align: center;
+            overflow-wrap: anywhere;
             cursor: pointer;
             pointer-events: none;
         }
 
         .date-picker-trigger {
-            position: absolute;
-            inset: 0;
+            position: relative;
             z-index: 1;
+            display: flex;
+            align-items: stretch;
+            flex: 1 1 auto;
             width: 100%;
-            height: 100%;
+            min-height: 55px;
+            height: auto;
             margin: 0;
             padding: 0;
             border: 0;
             border-radius: inherit;
             background: transparent;
             color: inherit;
+            line-height: normal;
         }
 
         .date-picker-trigger:hover:not(:disabled),
@@ -545,9 +562,11 @@
         }
 
         .image-input-group .file-picker-label:active {
-            border-color: #829B89;
-            background: #C7D8CC;
-            color: #263A2C;
+            border-color: #52755D;
+            background: #9DB9A5;
+            color: #1F3325;
+            box-shadow: 0 0 0 3px rgba(82, 117, 93, 0.24);
+            transform: scale(0.98);
         }
 
         .media-date-row .tanggal-input-kustom {
@@ -563,8 +582,10 @@
         }
 
         .media-date-row .tanggal-input-kustom:active {
-            border-color: #8297AC;
-            background: #C8D6E4;
+            border-color: #56718A;
+            background: #AFC3D6;
+            box-shadow: 0 0 0 3px rgba(86, 113, 138, 0.25);
+            transform: scale(0.98);
         }
 
         .media-date-row .tanggal-input-kustom .date-picker-label {
@@ -588,8 +609,10 @@
         }
 
         .media-date-row .waktu-input-kustom:active {
-            border-color: #A39075;
-            background: #DCD0BE;
+            border-color: #8A6841;
+            background: #D2B995;
+            box-shadow: 0 0 0 3px rgba(138, 104, 65, 0.24);
+            transform: scale(0.98);
         }
 
         .media-date-row .waktu-input-kustom .date-picker-label {
@@ -843,7 +866,8 @@
         }
 
         .media-date-row {
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
             align-items: stretch;
             gap: 8px;
         }
@@ -858,16 +882,18 @@
 
         .media-date-row .file-picker-label,
         .media-date-row .date-picker-label {
-            height: 52px;
-            margin-top: 5px;
-            padding: 10px 8px;
-            font-size: clamp(14px, 2vw, 20px);
-            white-space: nowrap;
+            min-height: 55px;
+            height: auto;
+            margin-top: 0;
+            padding: 6px 8px;
+            font-size: clamp(12px, 1.8vw, 18px);
+            white-space: normal;
             text-align: center;
         }
 
         .media-date-row .file-picker-label {
-            padding: 4px 8px;
+            margin-top: 5px;
+            padding: 6px 8px;
             line-height: 1.15;
         }
 
@@ -877,20 +903,29 @@
         }
 
         .media-date-row .date-picker-label {
-            height: 55px;
-            margin-top: 0;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            padding: 2px 8px;
-            font-size: clamp(12px, 1.8vw, 16px);
+            min-height: 55px;
+            height: auto;
+            padding: 6px 8px;
+            font-size: clamp(11px, 1.7vw, 16px);
             line-height: 1.2;
             white-space: pre-line;
+            overflow-wrap: anywhere;
         }
 
         .media-date-row .validation-message {
             min-height: 0;
             margin-top: 4px;
             font-size: 12px;
+        }
+
+        @media (max-width: 480px) {
+            .media-date-row {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .media-date-row .image-input-group {
+                grid-column: 1 / -1;
+            }
         }
         
         .input-section {

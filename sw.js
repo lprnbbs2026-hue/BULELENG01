@@ -1,4 +1,4 @@
-const CACHE_NAME = "sistem-pelaporan-v36";
+const CACHE_NAME = "sistem-pelaporan-v37";
 const APP_SHELL = [
   "./",
   "./index.html",

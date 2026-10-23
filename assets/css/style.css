@@ -1689,14 +1689,6 @@
             margin-bottom: 12px;
         }
 
-        .desa-entry-control {
-            position: relative;
-            z-index: 1;
-            width: 100%;
-            min-height: 48px;
-            margin: 0 0 12px;
-        }
-
         #installPwaButton,
         #selectDesa {
             width: 100%;

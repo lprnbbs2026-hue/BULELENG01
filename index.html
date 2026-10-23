@@ -26,14 +26,9 @@
                 alt="Lambang TNI Angkatan Darat"
             >
             <div class="modal-logo-caption">TNI-AD</div>
-            <div class="desa-entry-control">
-                <button id="installPwaButton" type="button">
-                    Instal Aplikasi
-                </button>
-                <select id="selectDesa" aria-label="Pilih desa atau kelurahan" onchange="loadSelectedDesa()" hidden>
-                    <option value="">Pilih Desa/Kelurahan</option>
-                </select>
-            </div>
+            <select id="selectDesa" aria-label="Pilih desa atau kelurahan" onchange="loadSelectedDesa()">
+                <option value="">Pilih Desa/Kelurahan</option>
+            </select>
             <div class="start-mode-description" aria-live="polite">
                 <span id="runningTextContent" class="marquee-text">Memuat RUNNING.TXT...</span>
             </div>
@@ -83,6 +78,9 @@
         </div>
         
         <div class="input-section">
+            <button id="installPwaButton" type="button">
+                Instal Aplikasi
+            </button>
             <div class="file-input-container">
                 <input type="text" id="watermarkText" class="watermark-input" placeholder="Judul narasi kegiatan" oninput="updatePreview()">
                 <div class="media-date-row">
@@ -1715,6 +1713,7 @@
 
         function resetForm() {
             selectedDesa = "";
+            updateInstallButton();
             kordinatList = [];
             currentKoordinat = "";
             document.getElementById('selectDesa').value = "";
@@ -2164,6 +2163,7 @@
         }
 
         let deferredInstallPrompt = null;
+        let installPromptChecked = false;
         const PWA_INSTALLED_KEY = "dukopsPwaInstalled";
 
         function isPwaInstalled() {
@@ -2183,18 +2183,27 @@
             const button = document.getElementById('installPwaButton');
             const villageSelect = document.getElementById('selectDesa');
             if (!button || !villageSelect) return;
-            const selectionModal = document.getElementById('desaStartModal');
-            const selectionIsVisible = Boolean(
-                selectionModal && !selectionModal.classList.contains('hidden')
-            );
             const canChooseVillage = isPwaInstalled();
-            button.classList.toggle('visible', selectionIsVisible && !canChooseVillage);
-            villageSelect.hidden = !canChooseVillage;
+            const shouldOfferInstall = Boolean(selectedDesa) &&
+                !canChooseVillage &&
+                (!installPromptChecked || Boolean(deferredInstallPrompt));
+            button.classList.toggle('visible', shouldOfferInstall);
+            villageSelect.hidden = false;
+        }
+
+        function rememberPwaInstallation() {
+            try {
+                localStorage.setItem(PWA_INSTALLED_KEY, "true");
+            } catch (error) {
+                console.warn("Status instalasi tidak dapat disimpan:", error);
+            }
+            updateInstallButton();
         }
 
         window.addEventListener('beforeinstallprompt', event => {
             event.preventDefault();
             deferredInstallPrompt = event;
+            installPromptChecked = true;
             try {
                 localStorage.removeItem(PWA_INSTALLED_KEY);
             } catch (error) {
@@ -2205,12 +2214,8 @@
 
         window.addEventListener('appinstalled', () => {
             deferredInstallPrompt = null;
-            try {
-                localStorage.setItem(PWA_INSTALLED_KEY, "true");
-            } catch (error) {
-                console.warn("Status instalasi tidak dapat disimpan:", error);
-            }
-            updateInstallButton();
+            installPromptChecked = true;
+            rememberPwaInstallation();
         });
 
         const standaloneDisplayMode = window.matchMedia('(display-mode: standalone)');
@@ -2220,6 +2225,10 @@
             standaloneDisplayMode.addListener(updateInstallButton);
         }
         updateInstallButton();
+        window.setTimeout(() => {
+            installPromptChecked = true;
+            updateInstallButton();
+        }, 2500);
 
         document.getElementById('installPwaButton').addEventListener('click', async () => {
             if (isPwaInstalled()) {
@@ -2227,7 +2236,6 @@
                 return;
             }
             if (!deferredInstallPrompt) {
-                showNotification("Buka menu browser, lalu pilih Instal aplikasi atau Tambahkan ke layar utama.", "warning");
                 return;
             }
 
@@ -2237,13 +2245,15 @@
                 await promptEvent.prompt();
                 const choice = await promptEvent.userChoice;
                 if (choice.outcome === "accepted") {
-                    updateInstallButton();
+                    rememberPwaInstallation();
                 } else {
+                    installPromptChecked = true;
                     updateInstallButton();
                 }
             } catch (error) {
                 console.error('Prompt instalasi gagal:', error);
-                showNotification("Prompt instalasi gagal dibuka. Coba instal melalui menu browser.", "error");
+                installPromptChecked = true;
+                updateInstallButton();
             } finally {
                 updateInstallButton();
             }

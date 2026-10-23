@@ -99,7 +99,7 @@
                         <button class="date-picker-trigger" type="button" aria-label="Pilih waktu" onclick="openDatePicker('tanggalJam')">
                             <span class="date-picker-label">Waktu</span>
                         </button>
-                        <input type="time" id="tanggalJam" step="1" lang="id" aria-label="Pilih waktu 24 jam" onchange="syncDateTimeInputs()" oninput="syncDateTimeInputs()">
+                        <input type="time" id="tanggalJam" step="1" lang="id" aria-label="Pilih waktu 24 jam" onchange="stopLiveSeconds(); syncDateTimeInputs()" oninput="stopLiveSeconds(); syncDateTimeInputs()">
                     </div>
                     <input type="text" id="tanggalWaktuDisplay" value="Pilih tanggal dan waktu" readonly aria-label="Tanggal dan waktu kegiatan">
                     <input type="datetime-local" id="tanggalWaktu" step="1" lang="id" onchange="updateDatePreview()" aria-label="Tanggal dan waktu gabungan">
@@ -330,6 +330,7 @@
         let coordinateLogoRevealTimer = null;
         let coordinateLogoCleanupTimer = null;
         let tanggalWaktu = "";
+        let liveSecondsEnabled = false;
         let lastSubmittedDate = null;
         let submissionCount = 0;
         let submittedDates = [];
@@ -1268,19 +1269,21 @@
         }
 
         function updateLiveSeconds() {
+            if (!liveSecondsEnabled) return;
+
+            const dateInput = document.getElementById("tanggalTanggal");
+            const timeInput = document.getElementById("tanggalJam");
             const picker = document.getElementById("tanggalWaktu");
-            if (!picker || !picker.value) return;
+            if (!dateInput?.value || !timeInput?.value || !picker) return;
 
-            const now = new Date();
-            const [datePart, timePart] = picker.value.split("T");
-            const [hours, minutes] = timePart.split(":");
-            const seconds = String(now.getSeconds()).padStart(2, "0");
-            const nextValue = `${datePart}T${hours}:${minutes}:${seconds}`;
+            const [hours, minutes] = timeInput.value.split(":");
+            const seconds = String(new Date().getSeconds()).padStart(2, "0");
+            timeInput.value = `${hours}:${minutes}:${seconds}`;
+            syncDateTimeInputs();
+        }
 
-            if (picker.value !== nextValue) {
-                picker.value = nextValue;
-                updateDatePreview();
-            }
+        function stopLiveSeconds() {
+            liveSecondsEnabled = false;
         }
 
         function autoResizeNarasi(textarea) {
@@ -1684,6 +1687,7 @@
             document.getElementById('tanggalTanggal').value = `${year}-${month}-${day}`;
             document.getElementById('tanggalJam').value = `${hours}:${minutes}:${seconds}`;
             syncDateTimeInputs();
+            liveSecondsEnabled = true;
             setInterval(updateLiveSeconds, 1000);
 
         }

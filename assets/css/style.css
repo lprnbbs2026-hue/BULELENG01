@@ -927,11 +927,7 @@
 
         @media (max-width: 480px) {
             .media-date-row {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-
-            .media-date-row .image-input-group {
-                grid-column: 1 / -1;
+                grid-template-columns: minmax(0, 1fr);
             }
         }
         

@@ -160,7 +160,7 @@
         .header-image-full {
             display: block;
             width: 100%;
-            max-width: 100%;
+            max-width: 800px;
             height: auto;
             margin: 0 auto;
             object-fit: contain;

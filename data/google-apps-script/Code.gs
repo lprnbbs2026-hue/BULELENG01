@@ -2,7 +2,6 @@
  * KONFIGURASI
  *************************************************************/
 const PARENT_FOLDER_ID = '1U6C4geioUnHPs6OUK19ukQMpYHr-3j65';
-const COUNTER_FILE = '_counters.json';
 
 /*************************************************************
  * ROUTER
@@ -141,7 +140,7 @@ function handleUpload(e) {
       zipFileName
     );
     const file = desaFolder.createFile(blob);
-    const counter = bumpCounter(accountId, counterDateKey);
+    const counter = readCounter(accountId);
 
     return {
       success: true,
@@ -246,44 +245,43 @@ function handleListFiles(e) {
   };
 }
 
-/*************************************************************
- * COUNTER — TERSIMPAN DI _counters.json PADA FOLDER INDUK
- *************************************************************/
-function readCountersFile() {
+function readCounter(accountId) {
+  if (!accountId) throw new Error('accountId wajib diisi.');
+
+  const regionType = /^kelurahan\b/i.test(accountId) ? 'Kelurahan' : 'Desa';
+  const safeAccountId = sanitizeFolderName(accountId);
   const root = DriveApp.getFolderById(PARENT_FOLDER_ID);
-  const files = root.getFilesByName(COUNTER_FILE);
-  if (!files.hasNext()) return {};
-
-  try {
-    return JSON.parse(files.next().getBlob().getDataAsString()) || {};
-  } catch (err) {
-    throw new Error('File _counters.json tidak valid: ' + err.message);
-  }
-}
-
-function writeCountersFile(data) {
-  if (!data || typeof data !== 'object' || Array.isArray(data)) {
-    throw new Error('Data counter tidak valid.');
-  }
-
-  const root = DriveApp.getFolderById(PARENT_FOLDER_ID);
-  const files = root.getFilesByName(COUNTER_FILE);
-  const content = JSON.stringify(data);
-
-  if (files.hasNext()) {
-    files.next().setContent(content);
-  } else {
-    root.createFile(COUNTER_FILE, content, 'application/json');
-  }
-}
-
-function counterFrom(entry) {
-  const dailyCounts = (entry && entry.dailyCounts) || {};
+  const yearFolders = root.getFolders();
+  const dailyCounts = {};
   let total = 0;
 
-  for (const dateKey in dailyCounts) {
-    if (Object.prototype.hasOwnProperty.call(dailyCounts, dateKey)) {
-      total += Number(dailyCounts[dateKey]) || 0;
+  while (yearFolders.hasNext()) {
+    const yearFolder = yearFolders.next();
+    const monthFolders = yearFolder.getFolders();
+
+    while (monthFolders.hasNext()) {
+      const monthFolder = monthFolders.next();
+      const regionFolders = monthFolder.getFoldersByName(regionType);
+
+      while (regionFolders.hasNext()) {
+        const regionFolder = regionFolders.next();
+        const accountFolders = regionFolder.getFoldersByName(safeAccountId);
+
+        while (accountFolders.hasNext()) {
+          const accountFolder = accountFolders.next();
+          const files = accountFolder.getFiles();
+
+          while (files.hasNext()) {
+            const fileName = files.next().getName();
+            const match = fileName.match(/_(\d{2})-(\d{2})-(\d{4})\.zip$/i);
+            if (!match) continue;
+
+            const dateKey = `${match[3]}-${match[2]}-${match[1]}`;
+            dailyCounts[dateKey] = (dailyCounts[dateKey] || 0) + 1;
+            total++;
+          }
+        }
+      }
     }
   }
 
@@ -291,28 +289,6 @@ function counterFrom(entry) {
     total: total,
     dailyCounts: dailyCounts
   };
-}
-
-function readCounter(accountId) {
-  if (!accountId) return counterFrom(null);
-  const all = readCountersFile();
-  return counterFrom(all[accountId]);
-}
-
-function bumpCounter(accountId, dateKey) {
-  if (!accountId || !dateKey) {
-    throw new Error('accountId dan dateKey wajib diisi.');
-  }
-
-  const all = readCountersFile();
-  if (!all[accountId]) all[accountId] = {};
-  if (!all[accountId].dailyCounts) all[accountId].dailyCounts = {};
-
-  const current = Number(all[accountId].dailyCounts[dateKey]) || 0;
-  all[accountId].dailyCounts[dateKey] = current + 1;
-  writeCountersFile(all);
-
-  return counterFrom(all[accountId]);
 }
 
 /*************************************************************
@@ -400,16 +376,10 @@ function testDriveConnection() {
  *************************************************************/
 function setup() {
   const root = DriveApp.getFolderById(PARENT_FOLDER_ID);
-  const files = root.getFilesByName(COUNTER_FILE);
-
-  if (!files.hasNext()) {
-    root.createFile(COUNTER_FILE, '{}', 'application/json');
-  }
-
   Logger.log('Setup selesai.');
   Logger.log('Folder induk: %s', root.getName());
   Logger.log('Folder ID: %s', PARENT_FOLDER_ID);
-  Logger.log('File counter siap: %s', COUNTER_FILE);
+  Logger.log('Counter dihitung langsung dari file ZIP di Drive.');
 }
 
 function testSetup() {
@@ -418,20 +388,17 @@ function testSetup() {
     Logger.log('Folder induk ditemukan: %s', root.getName());
     Logger.log('Folder ID: %s', PARENT_FOLDER_ID);
 
-    const files = root.getFilesByName(COUNTER_FILE);
-    if (files.hasNext()) {
-      Logger.log('File counter ada: %s', files.next().getName());
-    } else {
-      Logger.log('File counter belum ada. Jalankan setup() dulu.');
-    }
+    Logger.log('Counter dihitung langsung dari file ZIP di Drive.');
   } catch (err) {
     Logger.log('Error: %s', err && err.message ? err.message : String(err));
   }
 }
 
-function testBaca() {
-  const all = readCountersFile();
-  Logger.log('Isi _counters.json:');
-  Logger.log(JSON.stringify(all, null, 2));
-  Logger.log('Total akun: %s', Object.keys(all).length);
+function testBaca(accountId) {
+  if (!accountId) {
+    throw new Error('Berikan nama Desa/Kelurahan, misalnya "Kelurahan Banjar Tegal".');
+  }
+
+  const counter = readCounter(accountId);
+  Logger.log('Counter %s: %s', accountId, JSON.stringify(counter));
 }

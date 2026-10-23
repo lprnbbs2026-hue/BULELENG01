@@ -1,3 +1,0 @@
--- Supabase integration has been removed from this project.
--- This file is intentionally left as a placeholder and is not used by the app.
--- If a future database is added again, recreate the schema here.

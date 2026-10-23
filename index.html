@@ -151,7 +151,7 @@
         }
 
         async function sendToBackend(action, data = {}) {
-            const allowedActions = ["uploadDrive", "getCounter", "listFiles"];
+            const allowedActions = ["uploadDrive", "getCounter", "listFiles", "repairSequence"];
             if (!allowedActions.includes(action)) {
                 throw new Error(`Action "${action}" tidak tersedia`);
             }
@@ -183,6 +183,39 @@
                 throw new Error(result.error || "Gagal mengambil counter Google Drive");
             }
             return result.counter;
+        }
+
+        async function repairDriveReportSequence(accountId) {
+            try {
+                const result = await sendToBackend("repairSequence", {
+                    accountId: accountId.trim()
+                });
+                if (result.success !== true ||
+                    !Number.isSafeInteger(result.maxSequence) ||
+                    result.maxSequence < 0) {
+                    throw new Error(result.error || "Respons perbaikan nomor laporan tidak valid");
+                }
+
+                if (activeAccountId === accountId) {
+                    successfulSequence = result.maxSequence;
+                    localStorage.setItem(
+                        getAccountStorageKey("successfulSequence", accountId),
+                        String(successfulSequence)
+                    );
+                    await Promise.all([
+                        syncDriveUploadCounter(accountId),
+                        syncDriveReports(accountId)
+                    ]);
+                }
+                return true;
+            } catch (error) {
+                console.error("Gagal memperbaiki nomor urut laporan:", error);
+                showNotification(
+                    "Gagal memperbaiki nomor urut laporan. Perbarui deployment Google Apps Script.",
+                    "error"
+                );
+                return false;
+            }
         }
 
         async function getDriveReports(accountId, monthFilter) {
@@ -306,6 +339,7 @@
         let lastSyncedDriveReportsDate = "";
         let successfulSequence = 0;
         let successfulUploadRevision = 0;
+        let driveSequenceRepairPromise = Promise.resolve(true);
         let currentFile = null;
         let fileIsValid = false;
         let lastAutoDateNarration = "";
@@ -969,9 +1003,8 @@
             currentKoordinat = "";
             selectedDesa = select.options[select.selectedIndex].text.replace(/^\d+\.\s*/, '');
             initializeAccountData(selectedDesa);
-            syncDriveUploadCounter(selectedDesa);
+            driveSequenceRepairPromise = repairDriveReportSequence(selectedDesa);
             lastSyncedDriveReportsDate = getSelectedReportDate();
-            syncDriveReports(selectedDesa);
             const babinsaIdentity = getBabinsaIdentity(selectedDesa);
             updateDesaHeaderImage(selectedDesa);
             const headerDesaLabel = document.getElementById('headerDesaLabel');
@@ -1483,6 +1516,10 @@
             const originalButtonText = submitButton.innerHTML;
             submitButton.textContent = `Memproses... ${selectedDesa}`;
             try {
+                const sequenceReady = await driveSequenceRepairPromise;
+                if (!sequenceReady) {
+                    throw new Error("Penomoran laporan belum dapat diperbaiki. Coba lagi setelah Apps Script diperbarui.");
+                }
                 const counter = await window.getDriveUploadCounter(selectedDesa);
                 if (activeAccountId !== selectedDesa) {
                     throw new Error("Desa/Kelurahan berubah saat menyiapkan laporan");
@@ -1504,6 +1541,9 @@
                         new Date(tanggalWaktu)
                     );
                     driveUploaded = uploadResult === true || Boolean(uploadResult && uploadResult.success === true);
+                    const uploadedFileName = uploadResult && typeof uploadResult.fileName === "string"
+                        ? uploadResult.fileName
+                        : `${submission.baseName}.zip`;
                     if (uploadResult && uploadResult.duplicate === true) {
                         uploadErrorMessage = uploadResult.error || "Laporan untuk tanggal ini sudah pernah dikirim.";
                     }
@@ -1511,7 +1551,16 @@
                         ? uploadResult.counter
                         : null;
                     if (driveUploaded) {
-                        updateStoredFileTicker(`${submission.baseName}.zip`);
+                        updateStoredFileTicker(uploadedFileName);
+                        if (uploadResult.sequenceRepairSuccess === false) {
+                            console.error("Penomoran setelah upload gagal:", uploadResult.sequenceRepairError);
+                            showNotification(
+                                "Laporan berhasil diunggah, tetapi nomor urut belum dapat diperbaiki. Pilih desa lagi atau hubungi admin.",
+                                "warning",
+                                true,
+                                5000
+                            );
+                        }
                     } else {
                         console.error(uploadErrorMessage);
                     }
@@ -1523,7 +1572,10 @@
                     updateCounter();
                     recordSuccessfulUpload(driveCounter, files.baseName);
                     saveSubmittedDate(tanggalWaktu);
-                    addSendLog(`${files.baseName}.zip`);
+                    const finalFileName = uploadResult && typeof uploadResult.fileName === "string"
+                        ? uploadResult.fileName
+                        : `${files.baseName}.zip`;
+                    addSendLog(finalFileName);
                     submittedBabinsas.push({ desa: selectedDesa, date: tanggalWaktu });
                     const reportMonth = getSelectedReportMonth();
                     newlyCreatedReportsByAccount[selectedDesa] ??= {};
@@ -1942,7 +1994,7 @@
             const counterSequence = Number.isSafeInteger(counter.maxSequence) && counter.maxSequence >= 0
                 ? counter.maxSequence
                 : counter.total;
-            successfulSequence = Math.max(successfulSequence, counterSequence);
+            successfulSequence = counterSequence;
             localStorage.setItem(
                 getAccountStorageKey('successfulUploadsByDate'),
                 JSON.stringify(successfulUploadsByDate)

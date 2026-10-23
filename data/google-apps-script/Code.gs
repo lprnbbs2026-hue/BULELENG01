@@ -43,6 +43,9 @@ function doPost(e) {
     if (action === 'listFiles') {
       return jsonOut(handleListFiles(e));
     }
+    if (action === 'repairSequence') {
+      return jsonOut(handleRepairSequence(e));
+    }
     return jsonOut({
       success: false,
       error: 'Action tidak dikenali: ' + action
@@ -140,6 +143,15 @@ function handleUpload(e) {
       zipFileName
     );
     const file = desaFolder.createFile(blob);
+    let sequenceRepairError = '';
+    try {
+      renumberAccountReportFiles(accountId);
+    } catch (repairError) {
+      sequenceRepairError = repairError && repairError.message
+        ? repairError.message
+        : String(repairError);
+      console.error('Upload berhasil, tetapi penomoran belum dapat diperbaiki:', sequenceRepairError);
+    }
     const counter = readCounter(accountId);
 
     return {
@@ -147,7 +159,9 @@ function handleUpload(e) {
       counter: counter,
       fileId: file.getId(),
       fileUrl: file.getUrl(),
-      fileName: file.getName()
+      fileName: file.getName(),
+      sequenceRepairSuccess: !sequenceRepairError,
+      sequenceRepairError: sequenceRepairError
     };
   } finally {
     lock.releaseLock();
@@ -245,56 +259,108 @@ function handleListFiles(e) {
   };
 }
 
+function handleRepairSequence(e) {
+  const p = (e && e.parameter) || {};
+  const accountId = String(p.accountId || '').trim();
+  if (!accountId) return { success: false, error: 'accountId wajib diisi' };
+
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(30000);
+  } catch (err) {
+    return { success: false, error: 'Server sibuk, coba lagi.' };
+  }
+
+  try {
+    return Object.assign(
+      { success: true },
+      renumberAccountReportFiles(accountId)
+    );
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function renumberAccountReportFiles(accountId) {
+  const reportFiles = getAccountReportFiles(accountId);
+  reportFiles.sort((a, b) =>
+    a.dateKey.localeCompare(b.dateKey) ||
+    a.createdTime - b.createdTime ||
+    a.fileName.localeCompare(b.fileName) ||
+    a.file.getId().localeCompare(b.file.getId())
+  );
+
+  let changedCount = 0;
+  reportFiles.forEach((report, index) => {
+    const sequence = String(index + 1).padStart(3, '0');
+    const desiredName = sequence + '_' + report.fileName.replace(/^\d+_/, '');
+    if (desiredName !== report.fileName) {
+      report.file.setName(desiredName);
+      changedCount++;
+    }
+  });
+
+  return {
+    changedCount: changedCount,
+    total: reportFiles.length,
+    maxSequence: reportFiles.length
+  };
+}
+
 function readCounter(accountId) {
   if (!accountId) throw new Error('accountId wajib diisi.');
 
-  const regionType = /^kelurahan\b/i.test(accountId) ? 'Kelurahan' : 'Desa';
-  const safeAccountId = sanitizeFolderName(accountId);
-  const root = DriveApp.getFolderById(PARENT_FOLDER_ID);
-  const yearFolders = root.getFolders();
+  const reportFiles = getAccountReportFiles(accountId);
   const dailyCounts = {};
-  let total = 0;
   let maxSequence = 0;
 
+  reportFiles.forEach(report => {
+    dailyCounts[report.dateKey] = (dailyCounts[report.dateKey] || 0) + 1;
+    maxSequence = Math.max(maxSequence, report.sequence);
+  });
+
+  return {
+    total: reportFiles.length,
+    dailyCounts: dailyCounts,
+    maxSequence: maxSequence
+  };
+}
+
+function getAccountReportFiles(accountId) {
+  const regionType = /^kelurahan\b/i.test(accountId) ? 'Kelurahan' : 'Desa';
+  const safeAccountId = sanitizeFolderName(accountId);
+  const yearFolders = DriveApp.getFolderById(PARENT_FOLDER_ID).getFolders();
+  const reportFiles = [];
+
   while (yearFolders.hasNext()) {
-    const yearFolder = yearFolders.next();
-    const monthFolders = yearFolder.getFolders();
-
+    const monthFolders = yearFolders.next().getFolders();
     while (monthFolders.hasNext()) {
-      const monthFolder = monthFolders.next();
-      const regionFolders = monthFolder.getFoldersByName(regionType);
-
+      const regionFolders = monthFolders.next().getFoldersByName(regionType);
       while (regionFolders.hasNext()) {
-        const regionFolder = regionFolders.next();
-        const accountFolders = regionFolder.getFoldersByName(safeAccountId);
-
+        const accountFolders = regionFolders.next().getFoldersByName(safeAccountId);
         while (accountFolders.hasNext()) {
-          const accountFolder = accountFolders.next();
-          const files = accountFolder.getFiles();
-
+          const files = accountFolders.next().getFiles();
           while (files.hasNext()) {
-            const fileName = files.next().getName();
-            const match = fileName.match(/_(\d{2})-(\d{2})-(\d{4})\.zip$/i);
-            if (!match) continue;
+            const file = files.next();
+            const fileName = file.getName();
+            const dateMatch = fileName.match(/_(\d{2})-(\d{2})-(\d{4})\.zip$/i);
+            if (!dateMatch) continue;
 
             const sequenceMatch = fileName.match(/^(\d+)_/);
-            if (sequenceMatch) {
-              maxSequence = Math.max(maxSequence, Number(sequenceMatch[1]));
-            }
-            const dateKey = `${match[3]}-${match[2]}-${match[1]}`;
-            dailyCounts[dateKey] = (dailyCounts[dateKey] || 0) + 1;
-            total++;
+            reportFiles.push({
+              file: file,
+              fileName: fileName,
+              dateKey: `${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}`,
+              createdTime: file.getDateCreated().getTime(),
+              sequence: sequenceMatch ? Number(sequenceMatch[1]) : 0
+            });
           }
         }
       }
     }
   }
 
-  return {
-    total: total,
-    dailyCounts: dailyCounts,
-    maxSequence: maxSequence
-  };
+  return reportFiles;
 }
 
 /*************************************************************

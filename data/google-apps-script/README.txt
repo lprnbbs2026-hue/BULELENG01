@@ -24,10 +24,15 @@ Setiap upload mengirim nama Desa/Kelurahan terpilih sebagai `accountId`.
 Counter total dan jumlah per tanggal dihitung langsung dari nama file ZIP di
 folder Drive, tanpa membuat file counter terpisah. File `_counters.json` lama
 boleh dibiarkan; script yang baru tidak membaca atau memperbaruinya.
-Nomor di awal nama ZIP berlanjut dari nomor tertinggi yang sudah tersimpan
-untuk Desa/Kelurahan tersebut, lintas tanggal dan bulan.
+Saat Desa/Kelurahan dipilih, aplikasi menjalankan action `repairSequence`.
+Urutan juga diperbaiki otomatis setelah setiap upload, sehingga file ZIP
+yang tanggalnya terbaca selalu memakai awalan `001`, `002`, dan seterusnya
+dari tanggal paling awal, lintas bulan dan tahun. Perubahan hanya mengganti
+nama file ZIP di Drive; isi file tidak dihapus. Deployment Apps Script harus
+diperbarui agar perbaikan otomatis tersedia.
 
-Apps Script melayani action `uploadDrive`, `getCounter`, dan `listFiles`.
+Apps Script melayani action `uploadDrive`, `getCounter`, `listFiles`, dan
+`repairSequence`.
 `listFiles` mengembalikan nama ZIP dari desa/kelurahan dan bulan yang dipilih
 di aplikasi. Deploy ulang script setelah `Code.gs` diperbarui agar action
 tersebut tersedia di Web App.

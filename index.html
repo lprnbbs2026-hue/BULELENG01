@@ -16,20 +16,42 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <link rel="stylesheet" href="assets/css/style.css">
     <style>
+        :root {
+            --bg: #0B1220;
+            --panel: #202923;
+            --panel-soft: #252A2E;
+            --line: rgba(191, 213, 241, 0.28);
+            --primary: #2563EB;
+            --primary-strong: #1D4ED8;
+            --success: #22C55E;
+            --warning: #F59E0B;
+            --danger: #F44336;
+            --text: #E5EEF9;
+            --muted: #C4D3E6;
+        }
+
+        * { box-sizing: border-box; }
+
         body {
             margin: 0;
-            background: #0B1220;
-            color: #E5EEF9;
+            background: var(--bg);
+            color: var(--text);
             font-family: Arial, sans-serif;
+            line-height: 1.5;
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .container {
             width: 100%;
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 24px 16px 42px;
-            background: #202923;
+            max-width: none;
             min-height: 100vh;
+            margin: 0;
+            background: var(--panel);
+            padding: clamp(12px, 3vw, 28px);
+            border-top: 2px solid #465344;
+            border-bottom: 2px solid #465344;
         }
 
         .top-bar {
@@ -37,16 +59,17 @@
             align-items: center;
             justify-content: space-between;
             gap: 12px;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
             padding: 12px 16px;
+            border: 1px solid var(--line);
             background: rgba(17, 24, 39, 0.8);
-            border: 1px solid rgba(191, 213, 241, 0.25);
             border-radius: 12px;
         }
 
         .top-bar h2 {
             margin: 0;
             font-size: 1.1rem;
+            color: #EFF6FF;
         }
 
         .badge {
@@ -56,15 +79,58 @@
             min-width: 180px;
             padding: 8px 12px;
             border-radius: 999px;
-            background: rgba(76, 175, 80, 0.15);
-            border: 1px solid rgba(76, 175, 80, 0.36);
+            background: rgba(76, 175, 80, 0.12);
+            border: 1px solid rgba(76, 175, 80, 0.34);
             color: #dff9e6;
             font-weight: 700;
         }
 
+        .desa-start-card {
+            width: min(100%, 420px);
+            padding: 28px 22px;
+            border-radius: 14px;
+            background: rgba(22, 27, 36, 0.96);
+            border: 1px solid rgba(191, 213, 241, 0.25);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.38);
+            text-align: center;
+        }
+
+        .app-modal-title {
+            margin: 0 0 12px;
+            font-size: clamp(1.7rem, 4vw, 2.4rem);
+            color: #E0EDFF;
+        }
+
+        .modal-logo {
+            display: block;
+            width: 122px;
+            height: 152px;
+            margin: 0 auto 12px;
+            object-fit: contain;
+            filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.24));
+            animation: gentle-logo-float 2.8s ease-in-out infinite;
+        }
+
+        .modal-logo-caption {
+            margin-bottom: 12px;
+            color: #D6C68F;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+        }
+
+        .start-mode-description {
+            margin-top: 14px;
+            color: #E0EDFF;
+            font-size: 0.95rem;
+        }
+
         .header-container {
             display: block;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #29466B;
+            position: relative;
+            overflow: hidden;
         }
 
         .header-image-full {
@@ -72,85 +138,246 @@
             width: 100%;
             max-width: 100%;
             height: auto;
+            margin: 0 auto;
+            object-fit: contain;
             border-radius: 10px;
-            margin-bottom: 12px;
+        }
+
+        .header-desa-label {
+            position: absolute;
+            right: 0;
+            bottom: 24px;
+            left: 0;
+            overflow: hidden;
+            color: #FFFFFF;
+            font-size: clamp(24px, 4vw, 38px);
+            line-height: 1.25;
+            font-weight: 700;
+            text-align: center;
+            text-shadow: 0 0 2px #FFFFFF, 0 0 5px #FFFFFF, 0 2px 3px rgba(0, 0, 0, 0.95), 2px 0 3px rgba(0, 0, 0, 0.95), -2px 0 3px rgba(0, 0, 0, 0.95), 0 -2px 3px rgba(0, 0, 0, 0.95);
         }
 
         .input-section {
-            background: #252A2E;
-            border: 1px solid #41474C;
-            border-radius: 8px;
-            padding: 16px;
             margin-top: 18px;
+            padding: 16px;
+            background: var(--panel-soft);
+            border: 1px solid rgba(191, 213, 241, 0.2);
+            border-radius: 10px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.03);
         }
 
-        label {
-            display: block;
-            margin-bottom: 6px;
-            font-weight: bold;
-            color: #E0EDFF;
+        .dashboard-desa-status {
+            background: rgba(24, 46, 65, 0.7);
         }
 
-        select, input, textarea, button {
-            width: 100%;
-            box-sizing: border-box;
-            padding: 12px 14px;
-            border-radius: 8px;
-            border: 1px solid #BFD5F1;
-            font-size: 16px;
+        .mode-description,
+        .previewBox,
+        .validation-message,
+        #loadingKoordinat {
+            color: var(--muted);
             margin-top: 8px;
         }
 
-        select, input, textarea {
-            background: linear-gradient(180deg, #FFFFFF 0%, #EEF6FF 100%);
-            color: #172033;
+        .hidden-text {
+            display: none;
         }
 
+        #loadingKoordinat {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid rgba(255,255,255,0.25);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .refresh-btn,
+        .combined-button,
+        .exit-button,
+        .date-picker-trigger,
+        .file-picker-label,
+        .thank-you-button,
         button {
-            background: #2563EB;
+            transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+        }
+
+        .refresh-btn,
+        .combined-button,
+        .exit-button,
+        button {
+            width: 100%;
+            margin-top: 12px;
+            padding: 12px 15px;
             border: none;
+            border-radius: 8px;
+            background: var(--primary);
             color: #fff;
             font-weight: 700;
             cursor: pointer;
-            transition: 0.2s ease;
+            font-size: 16px;
         }
 
-        button:hover { background: #1D4ED8; }
-        button:disabled { background: #64748B; cursor: not-allowed; }
+        .refresh-btn:hover,
+        .combined-button:hover,
+        .exit-button:hover,
+        button:hover:not(:disabled) {
+            background: var(--primary-strong);
+        }
+
+        .exit-button {
+            background: #b91c1c;
+        }
+
+        .exit-button:hover { background: #991b1b; }
+
+        button:disabled {
+            background: #64748B;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .file-input-container {
+            margin-top: 12px;
+        }
+
+        .watermark-input {
+            display: block;
+            width: 100%;
+            margin-top: 10px;
+        }
 
         .media-date-row {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 8px;
-            margin-top: 8px;
+            gap: 10px;
+            margin-top: 12px;
         }
 
-        .previewBox {
-            margin-top: 12px;
-            color: #C4D3E6;
-            min-height: 22px;
+        .image-input-group,
+        .tanggal-input-kustom,
+        .waktu-input-kustom {
+            position: relative;
+            min-width: 0;
+        }
+
+        input[type="file"] {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .file-picker-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            min-height: 52px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: linear-gradient(180deg, #FFFFFF 0%, #EEF6FF 100%);
+            color: #172033;
+            font-size: clamp(18px, 3vw, 28px);
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            border: 1px solid #BFD5F1;
+        }
+
+        .file-picker-label:hover { background: #E8F1FF; }
+
+        .date-picker-trigger {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            min-height: 60px;
+            margin-top: 0;
+            border-radius: 999px;
+            border: 1px solid #BFD5F1;
+            background: linear-gradient(180deg, #FFFFFF 0%, #EEF6FF 100%);
+            color: #172033;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        .date-picker-label {
+            display: inline-block;
+            font-weight: 700;
+        }
+
+        select, input, textarea {
+            width: 100%;
+            padding: 12px 18px;
+            margin-top: 8px;
+            border-radius: 8px;
+            border: 1px solid #BFD5F1;
+            background: linear-gradient(180deg, #FFFFFF 0%, #EEF6FF 100%);
+            color: #172033;
+            font-size: 16px;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.06), 0 6px 16px rgba(34, 69, 109, 0.08);
+        }
+
+        #selectDesa {
+            background: linear-gradient(135deg, #60A5FA 0%, #2563EB 55%, #1E3A8A 100%);
+            color: #FFFFFF;
+            border-color: #93C5FD;
+            text-align: left;
+            text-align-last: left;
+            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
+        }
+
+        #selectDesa option {
+            background: #fff;
+            color: #172033;
         }
 
         textarea {
-            resize: vertical;
             min-height: 110px;
+            resize: vertical;
+            overflow-y: auto;
         }
 
-        .action-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 16px;
+        .previewBox {
+            min-height: 1em;
+            word-wrap: break-word;
+            font-size: 14px;
         }
 
-        .action-buttons button {
-            flex: 1 1 180px;
+        canvas {
+            display: none;
+            width: 100%;
+            height: auto;
+            border: 1px solid #29466B;
+            background: #08111F;
+            margin-top: 14px;
         }
+
+        .validation-message {
+            min-height: 20px;
+            margin-top: 10px;
+            font-size: 13px;
+            color: #E0EDFF;
+        }
+
+        .validation-warning { color: #FBBF24; }
+        .validation-error { color: #FCA5A5; }
+        .validation-success { color: #86EFAC; }
 
         .counter-container {
             margin-top: 18px;
             padding: 12px;
             background: #17263D;
+            border: 1px solid rgba(191, 213, 241, 0.2);
             border-radius: 8px;
             text-align: center;
         }
@@ -161,6 +388,7 @@
         }
 
         .counter-value {
+            margin-top: 6px;
             font-size: 30px;
             font-weight: bold;
             color: #A9C7E8;
@@ -169,18 +397,18 @@
         .sent-files-section {
             margin-top: 18px;
             padding: 12px;
-            border: 1px solid #29466B;
             border-radius: 8px;
+            border: 1px solid #29466B;
             background: #17263D;
         }
 
         .sent-files-section h3 {
-            margin: 0 0 8px;
+            margin: 0 0 10px;
             color: #BFDBFE;
         }
 
         #logTerkirim {
-            min-height: 30px;
+            min-height: 28px;
             color: #dfe9f6;
         }
 
@@ -194,14 +422,92 @@
         .log-status.success { color: #22C55E; }
         .log-status.failed { color: #F44336; }
 
-        @media (max-width: 540px) {
-            .top-bar {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            .media-date-row {
-                grid-template-columns: 1fr;
-            }
+        .thank-you-modal[hidden] { display: none; }
+        .thank-you-modal {
+            position: fixed;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            z-index: 2000;
+            background: rgba(10, 16, 12, 0.82);
+            padding: 24px 16px;
+        }
+
+        .thank-you-card {
+            width: min(100%, 440px);
+            padding: 28px 24px;
+            border-radius: 8px;
+            border: 1px solid #69775E;
+            background: #252D26;
+            color: #E8EBDD;
+            text-align: center;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .thank-you-card .modal-logo {
+            width: 64px;
+            height: 78px;
+            margin: 0 auto 14px;
+        }
+
+        .thank-you-card h2 {
+            margin: 12px 0;
+            color: #D6C68F;
+            font-size: 24px;
+        }
+
+        .thank-you-card p {
+            margin-bottom: 20px;
+            color: #E8EBDD;
+            font-size: 16px;
+        }
+
+        .thank-you-button {
+            min-width: 112px;
+            margin: 0;
+            padding: 10px 20px;
+            border: 1px solid #78856B;
+            border-radius: 4px;
+            background: #46533F;
+            color: #F2F3EC;
+        }
+
+        .thank-you-button:hover { background: #56634E; }
+
+        .offline-modal[hidden] { display: none; }
+        .offline-modal {
+            position: fixed;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            padding: 24px 16px;
+            background: rgba(10, 16, 12, 0.82);
+            z-index: 3000;
+        }
+
+        .offline-card {
+            width: min(100%, 440px);
+            padding: 28px 24px;
+            border-radius: 8px;
+            border: 1px solid #69775E;
+            background: #252D26;
+            color: #E8EBDD;
+            text-align: center;
+        }
+
+        @keyframes gentle-logo-float {
+            0% { transform: translateY(0) scale(1); filter: drop-shadow(0 8px 12px rgba(0,0,0,0.25)); }
+            50% { transform: translateY(-4px) scale(1.02); filter: drop-shadow(0 12px 16px rgba(0,0,0,0.3)); }
+            100% { transform: translateY(0) scale(1); filter: drop-shadow(0 8px 12px rgba(0,0,0,0.25)); }
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 640px) {
+            .top-bar { flex-direction: column; align-items: flex-start; }
+            .media-date-row { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -262,7 +568,7 @@
             <button id="installPwaButton" type="button">Instal Aplikasi</button>
 
             <div class="file-input-container">
-                <input type="text" id="watermarkText" class="watermark-input" placeholder="Judul narasi kegiatan contoh: Komsos" oninput="updatePreview()">
+                <input type="text" id="watermarkText" class="watermark-input" placeholder="Judul narasi kegiatan contoh : Komsos" oninput="updatePreview(); checkInputCompletion();">
 
                 <div class="media-date-row">
                     <div class="image-input-group">
@@ -275,24 +581,24 @@
                         <button class="date-picker-trigger" type="button" aria-label="Pilih tanggal" onclick="openDatePicker('tanggalTanggal')">
                             <span class="date-picker-label">Tanggal</span>
                         </button>
-                        <input type="date" id="tanggalTanggal" lang="id" aria-label="Pilih tanggal" onchange="syncDateTimeInputs()" oninput="syncDateTimeInputs()">
+                        <input type="date" id="tanggalTanggal" lang="id" aria-label="Pilih tanggal" onchange="syncDateTimeInputs(); checkInputCompletion();" oninput="syncDateTimeInputs(); checkInputCompletion();">
                     </div>
 
                     <div class="waktu-input-kustom">
                         <button class="date-picker-trigger" type="button" aria-label="Pilih waktu" onclick="openDatePicker('tanggalJam')">
                             <span class="date-picker-label">Waktu</span>
                         </button>
-                        <input type="time" id="tanggalJam" step="1" lang="id" aria-label="Pilih waktu 24 jam" onchange="stopLiveSeconds(); syncDateTimeInputs()" oninput="stopLiveSeconds(); syncDateTimeInputs()">
+                        <input type="time" id="tanggalJam" step="1" lang="id" aria-label="Pilih waktu 24 jam" onchange="stopLiveSeconds(); syncDateTimeInputs(); checkInputCompletion();" oninput="stopLiveSeconds(); syncDateTimeInputs(); checkInputCompletion();">
                     </div>
                 </div>
 
                 <input type="text" id="tanggalWaktuDisplay" value="Pilih tanggal & waktu" readonly aria-label="Tanggal & waktu kegiatan">
-                <input type="datetime-local" id="tanggalWaktu" step="1" lang="id" onchange="updateDatePreview()" aria-label="Tanggal & waktu gabungan">
+                <input type="datetime-local" id="tanggalWaktu" step="1" lang="id" onchange="updateDatePreview(); checkInputCompletion();" aria-label="Tanggal & waktu gabungan">
             </div>
 
             <div class="previewBox" id="previewTanggal"></div>
             <canvas id="canvas"></canvas>
-            <textarea id="narasi" rows="4" placeholder="Isi narasi kegiatan" oninput="autoResizeNarasi(this); checkInputCompletion()"></textarea>
+            <textarea id="narasi" rows="4" placeholder="Isi narasi kegiatan" oninput="autoResizeNarasi(this); checkInputCompletion();"></textarea>
 
             <div class="action-buttons">
                 <button id="submitBtn" class="combined-button" onclick="processSubmission()" disabled>SIMPAN</button>
@@ -314,20 +620,47 @@
     <script>
         const WEBHOOK_CONFIG_URL = "data/webhook.json";
         const LOCAL_DATA_URL = "data/desa/desa dan kelurahan.json";
+        const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp'];
+        const MAX_FILE_SIZE = 10 * 1024 * 1024;
         let googleAppsScriptWebhook = "";
         let selectedDesa = "";
         let kordinatList = [];
+        let fileIsValid = false;
+        let img = new Image();
 
-        async function getGoogleAppsScriptWebhook() {
-            if (googleAppsScriptWebhook) return googleAppsScriptWebhook;
-            const response = await fetch(WEBHOOK_CONFIG_URL, { cache: "no-store" });
-            if (!response.ok) throw new Error(`Gagal memuat konfigurasi webhook (HTTP ${response.status})`);
-            const config = await response.json();
-            if (typeof config.webhookUrl !== "string" || !/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec$/.test(config.webhookUrl)) {
-                throw new Error("URL webhook belum dikonfigurasi");
-            }
-            googleAppsScriptWebhook = config.webhookUrl;
-            return googleAppsScriptWebhook;
+        function normalizeWilayahName(value) {
+            return String(value || "")
+                .replace(/\.txt$/i, "")
+                .replace(/^\s+|\s+$/g, "")
+                .trim();
+        }
+
+        function updateSelectedDesaBadge() {
+            const badge = document.getElementById("selectedDesaBadge");
+            if (!badge) return;
+            badge.textContent = selectedDesa ? normalizeWilayahName(selectedDesa) : "Belum Pilih Desa";
+            badge.style.background = selectedDesa ? "rgba(76, 175, 80, 0.15)" : "rgba(255, 152, 0, 0.15)";
+            badge.style.borderColor = selectedDesa ? "rgba(76, 175, 80, 0.36)" : "rgba(255, 152, 0, 0.38)";
+        }
+
+        function renderPreview(label) {
+            const preview = document.getElementById("previewDesa");
+            if (!preview) return;
+            preview.textContent = label ? `Wilayah aktif: ${label}` : "Belum memilih desa/kelurahan";
+        }
+
+        function updatePreview() {
+            const input = document.getElementById("watermarkText");
+            const preview = document.getElementById("previewTanggal");
+            if (!preview) return;
+            preview.textContent = input && input.value ? `Judul: ${input.value}` : "Judul belum diisi";
+        }
+
+        function openDatePicker(id) {
+            const input = document.getElementById(id);
+            if (!input) return;
+            if (typeof input.showPicker === "function") input.showPicker();
+            else input.click();
         }
 
         async function fetchWilayahList() {
@@ -345,13 +678,14 @@
                     items.forEach(item => {
                         const opt = document.createElement("option");
                         opt.value = item;
-                        opt.textContent = item.replace(/\.txt$/i, "").replace(/^\s+|\s+$/g, "");
+                        opt.textContent = normalizeWilayahName(item);
                         select.appendChild(opt);
                     });
                 })
                 .catch(err => {
                     console.error(err);
                     const opt = document.createElement("option");
+                    opt.value = "";
                     opt.textContent = "Gagal memuat data desa";
                     opt.disabled = true;
                     opt.selected = true;
@@ -359,48 +693,62 @@
                 });
         }
 
-        function updateSelectedDesaBadge() {
-            const badge = document.getElementById("selectedDesaBadge");
-            if (!badge) return;
-            badge.textContent = selectedDesa || "Belum Pilih Desa";
-            badge.style.background = selectedDesa ? "rgba(76, 175, 80, 0.15)" : "rgba(255, 152, 0, 0.15)";
-            badge.style.borderColor = selectedDesa ? "rgba(76, 175, 80, 0.36)" : "rgba(255, 152, 0, 0.38)";
-        }
-
-        function loadSelectedDesa() {
+        async function loadSelectedDesa() {
             const select = document.getElementById("selectDesa");
-            selectedDesa = select.value;
+            selectedDesa = select.value || "";
             updateSelectedDesaBadge();
-            if (!selectedDesa) {
-                document.getElementById("headerDesaLabel").textContent = "";
-                return;
-            }
 
-            const label = selectedDesa.replace(/\.txt$/i, "").replace(/^\s+|\s+$/g, "");
-            document.getElementById("headerDesaLabel").textContent = label;
-            document.getElementById("runningTextContent").textContent = `Desa/Kelurahan aktif: ${label}`;
-            renderPreview(label);
-        }
-
-        function renderPreview(label) {
+            const labelEl = document.getElementById("headerDesaLabel");
+            const runningText = document.getElementById("runningTextContent");
             const preview = document.getElementById("previewDesa");
-            preview.textContent = `Wilayah aktif: ${label}`;
-        }
 
-        function updatePreview() {
-            const input = document.getElementById("watermarkText");
-            const preview = document.getElementById("previewTanggal");
-            preview.textContent = input.value ? `Judul: ${input.value}` : "Judul belum diisi";
-        }
-
-        function validateAndPreviewImage() {
-            const fileInput = document.getElementById("gambar");
-            const validationMsg = document.getElementById("fileValidation");
-            if (!fileInput.files || fileInput.files.length === 0) {
-                validationMsg.textContent = "Silakan pilih file gambar";
+            if (!selectedDesa) {
+                if (labelEl) labelEl.textContent = "";
+                if (runningText) runningText.textContent = "";
+                if (preview) preview.textContent = "Belum memilih desa/kelurahan";
+                kordinatList = [];
+                checkInputCompletion();
                 return;
             }
-            validationMsg.textContent = `File dipilih: ${fileInput.files[0].name}`;
+
+            const label = normalizeWilayahName(selectedDesa);
+            if (labelEl) labelEl.textContent = label;
+            if (runningText) runningText.textContent = `Desa/Kelurahan aktif: ${label}`;
+            renderPreview(label);
+
+            try {
+                const fileUrl = `data/desa/${encodeURIComponent(selectedDesa)}`;
+                const response = await fetch(fileUrl, { cache: "no-store" });
+                if (!response.ok) throw new Error("File koordinat tidak ditemukan");
+                const text = await response.text();
+                kordinatList = text
+                    .split(/\r?\n/)
+                    .map(line => line.trim())
+                    .filter(Boolean)
+                    .filter(line => /^[0-9°\s\.,"'SEW-]+$/.test(line));
+
+                if (kordinatList.length > 0) {
+                    pickRandomKoordinat();
+                    if (document.getElementById("loadingKoordinat")) {
+                        document.getElementById("loadingKoordinat").innerHTML = '<span class="loading-spinner" aria-hidden="true"></span>Koordinat siap';
+                    }
+                } else {
+                    if (preview) preview.textContent = `Wilayah aktif: ${label} (koordinat belum tersedia)`;
+                }
+            } catch (error) {
+                console.error(error);
+                if (preview) preview.textContent = `Wilayah aktif: ${label} (gagal memuat koordinat)`;
+            }
+
+            checkInputCompletion();
+        }
+
+        function pickRandomKoordinat() {
+            const preview = document.getElementById("previewDesa");
+            if (!preview || kordinatList.length === 0) return;
+            const randomIndex = Math.floor(Math.random() * kordinatList.length);
+            const coord = kordinatList[randomIndex];
+            preview.textContent = `Wilayah aktif: ${normalizeWilayahName(selectedDesa)} | Koordinat acak: ${coord}`;
         }
 
         function autoResizeNarasi(el) {
@@ -412,13 +760,17 @@
             const dateVal = document.getElementById("tanggalTanggal").value;
             const timeVal = document.getElementById("tanggalJam").value;
             const display = document.getElementById("tanggalWaktuDisplay");
+            const combined = document.getElementById("tanggalWaktu");
+
             if (dateVal && timeVal) {
                 display.value = `${dateVal} ${timeVal}`;
-                document.getElementById("tanggalWaktu").value = `${dateVal}T${timeVal}`;
+                combined.value = `${dateVal}T${timeVal}`;
             } else if (dateVal) {
                 display.value = dateVal;
+                combined.value = dateVal;
             } else {
                 display.value = "Pilih tanggal & waktu";
+                combined.value = "";
             }
         }
 
@@ -428,28 +780,142 @@
             display.value = value ? value.replace("T", " ") : "Pilih tanggal & waktu";
         }
 
-        function openDatePicker(id) {
-            const input = document.getElementById(id);
-            if (input) input.showPicker ? input.showPicker() : input.click();
+        function stopLiveSeconds() { }
+
+        function checkInputCompletion() {
+            const submitBtn = document.getElementById("submitBtn");
+            if (!submitBtn) return;
+
+            const hasDesa = Boolean(selectedDesa);
+            const hasDate = Boolean(document.getElementById("tanggalTanggal").value || document.getElementById("tanggalWaktu").value);
+            const hasTime = Boolean(document.getElementById("tanggalJam").value);
+            const hasNarration = Boolean(document.getElementById("narasi").value.trim());
+
+            submitBtn.disabled = !(hasDesa && hasDate && hasTime && hasNarration);
         }
 
-        function stopLiveSeconds() {}
-        function pickRandomKoordinat() {}
-        function checkInputCompletion() {}
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const units = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(1024));
+            return parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + ' ' + units[i];
+        }
+
+        function validateAndPreviewImage() {
+            const fileInput = document.getElementById("gambar");
+            const validationMsg = document.getElementById("fileValidation");
+            const canvas = document.getElementById("canvas");
+
+            validationMsg.className = "validation-message";
+            validationMsg.textContent = "";
+            fileIsValid = false;
+            canvas.style.display = "none";
+
+            if (!fileInput.files || fileInput.files.length === 0) {
+                validationMsg.className = "validation-message validation-warning";
+                validationMsg.textContent = "Silakan pilih file gambar";
+                return;
+            }
+
+            const file = fileInput.files[0];
+            if (!ALLOWED_TYPES.includes(file.type)) {
+                validationMsg.className = "validation-message validation-error";
+                validationMsg.textContent = "Format file tidak didukung. Gunakan JPG, PNG, GIF, atau WebP.";
+                fileInput.value = "";
+                return;
+            }
+
+            if (file.size > MAX_FILE_SIZE) {
+                validationMsg.className = "validation-message validation-error";
+                validationMsg.textContent = `File terlalu besar (${formatFileSize(file.size)}). Maksimal ${formatFileSize(MAX_FILE_SIZE)}.`;
+                fileInput.value = "";
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                img = new Image();
+                img.onload = function () {
+                    const width = img.naturalWidth || img.width;
+                    const height = img.naturalHeight || img.height;
+
+                    if (width <= height) {
+                        validationMsg.className = "validation-message validation-error";
+                        validationMsg.textContent = "Gambar harus berorientasi landscape (lebar > tinggi).";
+                        fileInput.value = "";
+                        canvas.style.display = "none";
+                        return;
+                    }
+
+                    if (width < 640 || height < 480) {
+                        validationMsg.className = "validation-message validation-warning";
+                        validationMsg.textContent = `Resolusi rendah (${width}x${height}). Gunakan minimal 640x480.`;
+                        canvas.style.display = "none";
+                        return;
+                    }
+
+                    fileIsValid = true;
+                    validationMsg.className = "validation-message validation-success";
+                    validationMsg.textContent = `Resolusi memadai (${width}x${height})`;
+
+                    const ctx = canvas.getContext("2d");
+                    const maxWidth = 900;
+                    const scale = Math.min(1, maxWidth / width);
+                    canvas.width = Math.max(1, width * scale);
+                    canvas.height = Math.max(1, height * scale);
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    canvas.style.display = "block";
+                };
+                img.onerror = function () {
+                    validationMsg.className = "validation-message validation-error";
+                    validationMsg.textContent = "Gagal memuat gambar. File mungkin rusak.";
+                    fileInput.value = "";
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
         function processSubmission() {
-            const log = document.getElementById("logTerkirim");
-            const item = document.createElement("div");
-            item.className = "log-entry";
-            item.innerHTML = `<strong>${selectedDesa || "Wilayah"}</strong> <span class="log-status success">Terkirim</span>`;
-            log.prepend(item);
-            document.getElementById("successfulUploadCount").textContent = String(Number(document.getElementById("successfulUploadCount").textContent) + 1);
+            const narasi = document.getElementById("narasi").value.trim();
+            const tanggal = document.getElementById("tanggalTanggal").value;
+            const jam = document.getElementById("tanggalJam").value;
+            const logContainer = document.getElementById("logTerkirim");
+            const countEl = document.getElementById("successfulUploadCount");
+
+            if (!selectedDesa) {
+                alert("Pilih desa/kelurahan terlebih dahulu.");
+                return;
+            }
+            if (!tanggal || !jam) {
+                alert("Pilih tanggal dan waktu kegiatan.");
+                return;
+            }
+            if (!narasi) {
+                alert("Isi narasi kegiatan sebelum menyimpan.");
+                return;
+            }
+
+            const logEntry = document.createElement("div");
+            logEntry.className = "log-entry";
+            logEntry.innerHTML = `<strong>${normalizeWilayahName(selectedDesa)}</strong> <span class="log-status success">Terkirim</span> - ${tanggal} ${jam}`;
+            logContainer.prepend(logEntry);
+
+            const current = Number(countEl.textContent || 0);
+            countEl.textContent = String(current + 1);
+
+            const thankYou = document.getElementById("thankYouModal");
+            const thankYouMessage = document.getElementById("thankYouMessage");
+            thankYouMessage.textContent = `Data kegiatan untuk ${normalizeWilayahName(selectedDesa)} berhasil disimpan.`;
+            thankYou.hidden = false;
         }
 
         function exitApplication() {
-            const modal = document.getElementById("thankYouModal");
-            const message = document.getElementById("thankYouMessage");
-            message.textContent = "Terima kasih, data telah disimpan untuk ditinjau kembali.";
-            modal.hidden = false;
+            const thankYou = document.getElementById("thankYouModal");
+            const thankYouMessage = document.getElementById("thankYouMessage");
+            thankYouMessage.textContent = "Terima kasih, data telah disimpan untuk ditinjau kembali.";
+            thankYou.hidden = false;
         }
 
         function closeThankYouModal() {
@@ -460,6 +926,7 @@
             populateDesaOptions();
             updateSelectedDesaBadge();
             updatePreview();
+            checkInputCompletion();
         });
     </script>
 </body>
